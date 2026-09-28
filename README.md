@@ -8,6 +8,10 @@ A compact React interface for a shared Brother label printer. Desktop toolbar an
 
 [Setup and development](STUDIO.md) · [Migration and tradeoffs](docs/migration.md) · [QL-800 power settings](docs/ql800.md) · [Design mockup](docs/design/app-mockup.png)
 
+## Linux auto power-off
+
+The experimental [QL-800 settings utility](docs/linux-power-settings.md) can read and disable Auto Power Off directly through Linux USB. A real QL-800 accepted a change from 60 minutes to disabled and returned the new value. Idle-period behavior and persistence after a power cycle remain to be tested. No Mac/Windows tool or firmware replacement was used.
+
 ## What changes
 
 | Area | Label Studio | Classic editor, still included |

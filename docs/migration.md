@@ -21,6 +21,6 @@ No user accounts are required. This is intended for a trusted local network; do 
 
 The QL-800 answered a status query with 62 mm continuous media and no errors. That does not establish print quality, red-media compatibility, or prevention of automatic power-off. The full Python dependency set still needs validation on 32-bit ARM. The Dockerfile builds React assets, but its container build was not verified locally.
 
-Desktop and mobile screenshots show simulation mode. No new physical print was made during development. Disable Auto Power Off using Brother's USB Printer Setting Tool separately, following [the hardware notes](ql800.md).
+Desktop and mobile screenshots show simulation mode. No new physical print was made during development. Auto Power Off can now be changed using the experimental [Linux utility](linux-power-settings.md). Its read-back was verified on one QL-800, but long-idle behavior and power-cycle persistence remain unverified. Brother's own USB utility remains the documented vendor method.
 
 The root route opens `/studio/`; existing advanced-editor URLs continue to work. Preserve both saved-label directories and installed fonts during upgrades. To roll back, restore the previous app and service configuration; the recovered original installation was left unchanged during development.

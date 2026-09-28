@@ -51,6 +51,8 @@ Modern saved documents use version 1 JSON in `instance/studio-labels/`, configur
 
 ## Printer power
 
+An experimental [Linux-only QL-800 utility](docs/linux-power-settings.md) now reads and changes Auto Power Off. On the test printer it changed 60 minutes to disabled and verified the read-back. Idle-period behavior and persistence after a power cycle remain unverified.
+
 Brother documents disabling **Auto Power Off (AC/DC)** by setting it to **None** in the Printer Setting Tool while the QL-800 is connected by USB to a Mac or Windows computer. [Brother's instructions](https://support.brother.com/g/b/faqend.aspx?c=us_ot&faqid=faqp00001613_001&lang=en&prod=lpql800eus).
 
 The Pi successfully queried the powered-on QL-800. It reported 62 mm continuous tape, waiting to receive, and no errors. That query did not read or change the auto-off setting, identify black/red media, or print a label. The app does not claim to wake a powered-off USB printer.
@@ -59,7 +61,7 @@ The Pi successfully queried the powered-on QL-800. It reported 62 mm continuous 
 
 ```sh
 uv pip install --python .venv/bin/python -r requirements-dev.txt
-.venv/bin/python -m pytest tests/test_studio.py tests/test_studio_qr.py -q
+.venv/bin/python -m pytest tests/test_studio.py tests/test_studio_qr.py tests/test_printer_settings.py -q
 npm run build --prefix frontend
 git diff --check
 ```

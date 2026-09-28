@@ -17,6 +17,6 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: sudo apt-get update && sudo apt-get install -y fonts-dejavu-core poppler-utils libusb-1.0-0
       - run: pip install -r requirements-dev.txt
-      - run: python -m pytest tests/test_studio.py tests/test_studio_qr.py -q
+      - run: python -m pytest tests/test_studio.py tests/test_studio_qr.py tests/test_printer_settings.py -q
       - run: npm ci --prefix frontend
       - run: npm run build --prefix frontend
