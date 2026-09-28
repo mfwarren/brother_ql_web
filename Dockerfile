@@ -1,4 +1,11 @@
 # syntax=docker/dockerfile:1.6
+FROM --platform=$BUILDPLATFORM node:24-alpine AS frontend-build
+WORKDIR /build/frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
 FROM --platform=$TARGETPLATFORM python:3-alpine
 
 ARG TARGETARCH
@@ -53,6 +60,7 @@ RUN if [ $TARGETARCH == "arm" ]; then \
     ; fi
 
 COPY . /app
+COPY --from=frontend-build /build/app/static/studio /app/app/static/studio
 
 EXPOSE 8013
 ENTRYPOINT ["python3", "run.py"]

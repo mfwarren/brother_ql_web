@@ -43,7 +43,7 @@ def pdffile_to_image(file: FileStorage, dpi: int) -> Image.Image:
     s = BytesIO()
     file.save(s)
     s.seek(0)
-    im = convert_from_bytes(s.read(), dpi=dpi)[0]
+    im = convert_from_bytes(s.read(), dpi=dpi, first_page=1, last_page=1)[0]
     return im
 
 

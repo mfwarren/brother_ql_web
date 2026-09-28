@@ -1,5 +1,4 @@
 import os
-import random
 import logging
 from fontTools.ttLib import TTFont
 from collections import defaultdict
@@ -24,8 +23,8 @@ class Fonts:
             os.path.expanduser('~/.local/share/fonts'), '/Library/Fonts', '/System/Library/Fonts',
             'C:\\Windows\\Fonts'
         ]
-        if len(additional_path) > 0:
-            search_paths.extend(additional_path)
+        if additional_path:
+            search_paths.extend([additional_path] if isinstance(additional_path, str) else additional_path)
 
         font_exts = ('.ttf', '.otf')
         for base_path in search_paths:
@@ -69,15 +68,12 @@ class Fonts:
                     # Remove the child
                     del self.fonts[other_family]
 
-        # Check if the default family/style is available, if not, pick an
-        # available random one
         if default_family in self.fonts and default_style in self.fonts[default_family]:
             logger.debug(f"Selected the following default font: {default_family}")
-        else:
-            logger.warning('Could not find any of the default fonts. Choosing a random one.')
-            family = random.choice(list(self.fonts.keys()))
-            style = random.choice(list(self.fonts[family].keys()))
-            logger.warning(f'The default font is now set to: {family} ({style})')
+        elif self.fonts:
+            self.default_family = next(iter(self.fonts))
+            self.default_style = sorted(self.fonts[self.default_family])[0]
+            logger.warning('Default font unavailable; using %s (%s)', self.default_family, self.default_style)
 
     def get_default_font(self):
         """Return the default font family and style."""

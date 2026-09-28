@@ -432,14 +432,14 @@ class SimpleLabel:
             version=1,
             error_correction=self._qr_correction,
             box_size=self._qr_size,
-            border=0,
+            border=4,
         )
         if len(self._code_text) > 0:
             text = self._code_text
         else:
             # Combine texts from all lines for QR code
             text = "\n".join(line.get('text', '') for line in self.text)
-        qr.add_data(text.encode("utf-8-sig"))
+        qr.add_data(text.encode("utf-8"))
         qr.make(fit=True)
         fill_color = 'red' if self._fore_color == (255, 0, 0) else 'black'
         qr_img = qr.make_image(fill_color=fill_color, back_color="white")

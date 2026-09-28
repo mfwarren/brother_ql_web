@@ -1,3 +1,46 @@
+# Label Studio for Brother QL
+
+A compact React interface for a shared Brother label printer. Desktop toolbar and saved-label sidebar, a touch layout for tablets, and a phone editor with a fixed print bar. Flask serves the built interface and handles rendering and printing; no Node server runs on the printer host.
+
+**Development preview.** Local renderer and simulator tests pass. Deployment and physical printing with this branch on a 32-bit Raspberry Pi are not yet verified. The existing app can remain in service while you evaluate this version separately.
+
+![Label Studio desktop](docs/design/desktop.png)
+
+[Setup and development](STUDIO.md) · [Migration and tradeoffs](docs/migration.md) · [QL-800 power settings](docs/ql800.md) · [Design mockup](docs/design/app-mockup.png)
+
+## What changes
+
+| Area | Label Studio | Classic editor, still included |
+| --- | --- | --- |
+| Interface | React, TypeScript, custom CSS; desktop, tablet, phone layouts | Bootstrap 5 and jQuery |
+| Labels | Multiline text, QR with caption, images and first PDF page | Per-line formatting, barcodes, templates, symbol picker |
+| Saved labels | Separate versioned JSON library, duplicate and quick print | Existing upstream library remains available |
+| Printer | Status checks, bounded USB reads, shared printer lock, roll-size checks | Uses the same lock for physical access |
+| Deployment | Build static assets, serve with Python | Available at `/labeldesigner/` |
+
+Use `⌘/Ctrl + S` to save and `⌘/Ctrl + Enter` to print from the editor. The simulator is explicitly labeled **Test print** and uses no paper. Mobile home-screen metadata is included; installation behavior depends on the browser and origin. There is no offline printing or offline job queue.
+
+## Upstream and license
+
+This fork starts from [DL6ER/brother_ql_web](https://github.com/DL6ER/brother_ql_web), commit `6c88c0489eb47324371425eb0bb55be04425aed7`. DL6ER builds on [pklaus](https://github.com/pklaus/brother_ql_web), [tbnobody](https://github.com/tbnobody/brother_ql_web), [dersimn](https://github.com/dersimn/brother_ql_web), and [davidramiro](https://github.com/davidramiro/brother_ql_web). Printer communication uses [matmair/brother_ql-inventree](https://github.com/matmair/brother_ql-inventree), descended from [pklaus/brother_ql](https://github.com/pklaus/brother_ql).
+
+The original Git history and [GPL-3.0 license](LICENSE) are retained. This is a community fork, not an official Brother product. No upstream endorsement is implied.
+
+## Screens
+
+The following are screenshots of the running interface. The generated [design board](docs/design/app-mockup.png) was made before implementation and includes conceptual controls that are not all implemented.
+
+| Tablet | Phone |
+| --- | --- |
+| ![Tablet](docs/design/ipad.png) | ![Phone](docs/design/phone.png) |
+
+## Verification
+
+The `Label Studio` workflow runs the renderer/QR regression tests and frontend production build. Legacy PNG snapshot tests are retained as a manual workflow: they assume the old root route and exact historical QR artwork. Their baselines have not been regenerated to conceal intentional changes. Container publication is manual and targets the fork owner's registry.
+
+<details>
+<summary>Original upstream documentation</summary>
+
 # brother_ql_web
 
 [![Python tests](https://github.com/DL6ER/brother_ql_web/actions/workflows/ci.yml/badge.svg)](https://github.com/DL6ER/brother_ql_web/actions/workflows/ci.yml) [![CodeQL Advanced](https://github.com/DL6ER/brother_ql_web/actions/workflows/codeql.yml/badge.svg)](https://github.com/DL6ER/brother_ql_web/actions/workflows/codeql.yml) [![Build and Push master to GHCR.io](https://github.com/DL6ER/brother_ql_web/actions/workflows/devcontainer-ghcr.yml/badge.svg)](https://github.com/DL6ER/brother_ql_web/actions/workflows/devcontainer-ghcr.yml)
@@ -212,3 +255,5 @@ Parts of this package are redistributed software products from 3rd parties. They
 -   [Bootstrap](https://github.com/twbs/bootstrap), MIT License
 -   [Font Awesome](https://github.com/FortAwesome/Font-Awesome), CC BY 4.0 License
 -   [jQuery](https://github.com/jquery/jquery), MIT License
+
+</details>

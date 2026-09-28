@@ -38,6 +38,9 @@ def create_app(config_class=Config) -> Flask:
     from app.labeldesigner import bp as labeldesigner_bp
     app.register_blueprint(labeldesigner_bp, url_prefix='/labeldesigner')
 
+    from app.studio import bp as studio_bp
+    app.register_blueprint(studio_bp, url_prefix='/studio')
+
     from app.errors import bp as errors_bp
     app.register_blueprint(errors_bp)
 

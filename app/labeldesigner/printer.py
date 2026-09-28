@@ -2,9 +2,11 @@ import logging
 import os
 import time
 import datetime
+import select
 from brother_ql.backends.helpers import send
 from brother_ql import BrotherQLRaster, create_label
 from brother_ql.backends.helpers import get_status
+from brother_ql.reader import interpret_response
 from brother_ql.backends import backend_factory, guess_backend
 from flask import Config
 from .label import LabelOrientation, LabelType, LabelContent
@@ -18,6 +20,38 @@ SIMULATED_LABELS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirn
 DEFAULT_BATCH_SIZE = 5
 
 logger = logging.getLogger(__name__)
+
+
+def query_printer_status(device_specifier, timeout=3.0):
+    if not device_specifier.startswith('file://'):
+        printer = get_printer(device_specifier)
+        try:
+            return get_status(printer)
+        finally:
+            printer.dispose()
+
+    fd = os.open(device_specifier[7:], os.O_RDWR | os.O_NONBLOCK)
+    try:
+        os.write(fd, b'\x1b\x69\x53')
+        deadline = time.monotonic() + timeout
+        response = bytearray()
+        while len(response) < 32:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError('Printer status timed out')
+            readable, _, _ = select.select([fd], [], [], remaining)
+            if not readable:
+                raise TimeoutError('Printer status timed out')
+            try:
+                chunk = os.read(fd, 32 - len(response))
+            except BlockingIOError:
+                continue
+            if not chunk:
+                raise OSError('Printer closed during status query')
+            response.extend(chunk)
+        return interpret_response(response)
+    finally:
+        os.close(fd)
 
 # Experimentally identified MAC address prefixes for Brother network printers
 # (may not be exhaustive)
@@ -203,6 +237,8 @@ def get_ptr_status(config: Config):
         "text_color": "",
         "red_support": False
     }
+    if device_specifier == 'simulation':
+        return {'printers': [SIMULATOR_PRINTER], 'selected': 'simulation', **SIMULATOR_PRINTER}
     try:
         # If device_specifier is the default '?', try to auto-detect multiple printers
         if device_specifier == '?':
@@ -217,8 +253,7 @@ def get_ptr_status(config: Config):
                         continue
                     spec = f"file://{dev}"
                     try:
-                        printer = get_printer(spec)
-                        printer_state = get_status(printer)
+                        printer_state = query_printer_status(spec)
                         printer_state.setdefault('path', spec)
                         found_list.append(printer_state)
                         logger.debug('Found compatible printer at %s -> %s', spec, printer_state.get('model'))
@@ -284,8 +319,7 @@ def get_ptr_status(config: Config):
             status['selected'] = device_specifier
             return status
         else:
-            printer = get_printer(device_specifier)
-            printer_state = get_status(printer)
+            printer_state = query_printer_status(device_specifier)
             for key, value in printer_state.items():
                 status[key] = value
         # Always include simulator in returned printers list

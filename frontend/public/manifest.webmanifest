@@ -1,0 +1,11 @@
+{
+  "name": "Label Studio",
+  "short_name": "Labels",
+  "id": "/studio/",
+  "start_url": "/studio/",
+  "scope": "/studio/",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#fafbfd",
+  "icons": [{"src": "/static/studio/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}]
+}
