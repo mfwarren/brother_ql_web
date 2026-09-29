@@ -2,11 +2,9 @@ import logging
 import os
 import time
 import datetime
-import select
 from brother_ql.backends.helpers import send
 from brother_ql import BrotherQLRaster, create_label
 from brother_ql.backends.helpers import get_status
-from brother_ql.reader import interpret_response
 from brother_ql.backends import backend_factory, guess_backend
 from flask import Config
 from .label import LabelOrientation, LabelType, LabelContent
@@ -30,37 +28,8 @@ def query_printer_status(device_specifier, timeout=3.0):
         finally:
             printer.dispose()
 
-    fd = os.open(device_specifier[7:], os.O_RDWR | os.O_NONBLOCK)
-    try:
-        drain_until = time.monotonic() + 0.1
-        while time.monotonic() < drain_until:
-            if select.select([fd], [], [], 0)[0]:
-                try:
-                    os.read(fd, 4096)
-                except BlockingIOError:
-                    pass
-            time.sleep(0.005)
-        os.write(fd, b'\x1b\x69\x53')
-        deadline = time.monotonic() + timeout
-        response = bytearray()
-        while len(response) < 32:
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                raise TimeoutError('Printer status timed out')
-            readable, _, _ = select.select([fd], [], [], remaining)
-            if not readable:
-                raise TimeoutError('Printer status timed out')
-            try:
-                chunk = os.read(fd, 32 - len(response))
-            except BlockingIOError:
-                continue
-            if not chunk:
-                time.sleep(min(0.01, max(0, deadline - time.monotonic())))
-                continue
-            response.extend(chunk)
-        return interpret_response(response)
-    finally:
-        os.close(fd)
+    from .usb_transport import query_status
+    return query_status(device_specifier, timeout)
 
 # Experimentally identified MAC address prefixes for Brother network printers
 # (may not be exhaustive)
@@ -113,7 +82,7 @@ class PrinterQueue:
             )
         return qlr, generated_images
 
-    def _send_raster(self, qlr, generated_images, batch_index=0) -> str:
+    def _send_raster(self, qlr, generated_images, batch_index=0, expected_jobs=1) -> str:
         """Send rasterized data to the printer or simulator.
         Returns an empty string on success, or an error message."""
         try:
@@ -132,7 +101,11 @@ class PrinterQueue:
             network_printer = isinstance(self.device_specifier, str) and self.device_specifier.startswith('tcp://')
             logger.info("Sending %d bytes to printer at %s (batch %d)",
                         len(qlr.data), self.device_specifier, batch_index)
-            info = send(qlr.data, self.device_specifier)
+            if self.device_specifier.startswith('file://'):
+                from .usb_transport import send_raster
+                info = send_raster(self.device_specifier, qlr.data, timeout=90 * expected_jobs, expected_jobs=expected_jobs)
+            else:
+                info = send(qlr.data, self.device_specifier)
             logger.info('Sent %d bytes to printer %s', len(qlr.data), self.device_specifier)
             if network_printer:
                 logger.info('Network printer does not provide status information.')
@@ -167,7 +140,7 @@ class PrinterQueue:
             logger.info('Processing batch %d (%d labels, %d/%d)',
                         batch_index, len(batch), start + len(batch), total)
             qlr, generated_images = self._rasterize_entries(batch)
-            status = self._send_raster(qlr, generated_images, batch_index)
+            status = self._send_raster(qlr, generated_images, batch_index, expected_jobs=len(batch))
             if status:
                 return status
 

@@ -240,6 +240,9 @@ def _status_from_raw(raw, model, expected_size=None):
     media_width = raw.get('media_width')
     media_length = raw.get('media_length')
     media = f'{media_width} mm {media_type}' if media_width and media_type else None
+    color = raw.get('media_color', 'unknown')
+    if color == 'black-red' and media:
+        media += ' (black/red)'
     if errors:
         return {'state': 'error', 'model': reported_model, 'message': ', '.join(map(str, errors)), 'media': media}
     if raw.get('phase_type') == 'Printing state':
@@ -252,11 +255,15 @@ def _status_from_raw(raw, model, expected_size=None):
         return {'state': 'unknown', 'model': reported_model, 'message': 'Printer readiness is unknown', 'media': media}
     if expected_size:
         label = next(item for item in _sizes() if item.identifier == expected_size)
+        if color == 'black-red' and expected_size != '62red':
+            return {'state': 'error', 'model': reported_model, 'message': 'Black/red tape is loaded. Choose 62 mm black/red for this label.', 'media': media}
         expected_width, expected_length = label.tape_size
         if (media_width, media_length) != (expected_width, expected_length):
             return {'state': 'error', 'model': reported_model, 'message': 'Loaded roll does not match label size', 'media': media}
     matching = [label.identifier for label in _sizes() if tuple(label.tape_size) == (media_width, media_length)]
-    return {'state': 'ready', 'model': reported_model, 'message': 'Printer ready', 'media': media, 'matchingSizes': matching}
+    if color == 'black-red':
+        matching = [size for size in matching if size == '62red']
+    return {'state': 'ready', 'model': reported_model, 'message': 'Printer ready', 'media': media, 'matchingSizes': matching, 'mediaColor': color}
 
 
 def _status_locked(device, expected_size=None):
@@ -330,8 +337,6 @@ def print_label():
     if cut not in ('each', 'end'):
         raise InputError('Invalid cut option.')
     device = _device()
-    if device != 'simulation' and draft['sizeId'] == '62red' and data.get('confirmRedMedia') is not True:
-        raise InputError('Confirm that 62 mm black/red tape is loaded before printing.')
     if device != 'simulation':
         lock = _printer_lock()
     else:
@@ -346,6 +351,8 @@ def print_label():
             state = _status_locked(device, draft['sizeId'])
             if state['state'] != 'ready':
                 return jsonify(message=state['message']), 503
+            if draft['sizeId'] == '62red' and state.get('mediaColor') != 'black-red' and data.get('confirmRedMedia') is not True:
+                raise InputError('Confirm that 62 mm black/red tape is loaded before printing.')
         queue = PrinterQueue(current_app.config['PRINTER_MODEL'], device, draft['sizeId'])
         try:
             for number in range(copies):

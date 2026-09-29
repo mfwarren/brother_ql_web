@@ -68,6 +68,7 @@ const statusSchema = z.object({
     message: z.string(),
     media: z.string().nullable(),
     matchingSizes: z.array(z.string()).default([]),
+    mediaColor: z.enum(["black-red", "unknown"]).default("unknown"),
 });
 export type PrinterStatus = z.infer<typeof statusSchema>;
 const savedSchema = z.object({

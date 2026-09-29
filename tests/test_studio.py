@@ -207,7 +207,7 @@ def test_file_printer_status_reads_reply_and_times_out_when_silent(monkeypatch, 
     original_read = os.read
     pending_empty = [True] if transient_empty else []
     def read(fd, size):
-        if size == 32 and pending_empty:
+        if seen and pending_empty:
             pending_empty.pop()
             return b''
         return original_read(fd, size)

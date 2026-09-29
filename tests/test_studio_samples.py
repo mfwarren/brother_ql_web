@@ -88,7 +88,7 @@ def test_fragile_preserves_media_and_compact_landscape_layout(client):
     assert any(r > 150 and g < 80 and b < 80 for r, g, b in image.get_flattened_data())
 
 
-def test_red_media_requires_confirmation_before_printer_access(client, monkeypatch):
+def test_red_media_requires_confirmation_before_printing(client, monkeypatch):
     from app import studio
     client.application.config['STUDIO_SEED_SAMPLES'] = True
     fragile = next(label for label in client.get('/studio/api/labels').json['labels'] if label['draft']['sizeId'] == '62red')
@@ -96,10 +96,11 @@ def test_red_media_requires_confirmation_before_printer_access(client, monkeypat
     calls = []
     def status(device, size):
         calls.append(size)
-        return {'state': 'offline', 'message': 'Test printer offline'}
+        return {'state': 'ready', 'message': 'Test ready'}
     monkeypatch.setattr(studio, '_status_locked', status)
     body = {'draft': fragile['draft'], 'copies': 1, 'cut': 'each'}
     assert client.post('/studio/api/print', json=body).status_code == 400
-    assert calls == []
+    assert calls == ['62red']
+    monkeypatch.setattr(studio, '_status_locked', lambda device, size: {'state': 'offline', 'message': 'Offline'})
     assert client.post('/studio/api/print', json={**body, 'confirmRedMedia': True}).status_code == 503
     assert calls == ['62red']

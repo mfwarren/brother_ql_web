@@ -112,6 +112,7 @@ export default function App() {
                             model: "QL-800",
                             media: null,
                             matchingSizes: [],
+                            mediaColor: "unknown",
                             message: errorMessage(error),
                         });
                 });
@@ -235,7 +236,8 @@ export default function App() {
         if (
             config?.mode === "physical" &&
             target.sizeId === "62red" &&
-            !confirmRedMedia
+            !confirmRedMedia &&
+            status?.mediaColor !== "black-red"
         ) {
             setRedPrint({ draft: target, copies: count });
             redDialog.current?.showModal();
@@ -1389,8 +1391,7 @@ export default function App() {
                 </div>
                 <p>
                     This label is saved for 62 mm black/red tape. The printer
-                    reports the width, but cannot confirm the color type through
-                    this app.
+                    has not confirmed the tape color.
                 </p>
                 <button
                     className="button primary"

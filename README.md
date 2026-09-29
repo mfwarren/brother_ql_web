@@ -28,8 +28,8 @@ The additional examples take inspiration from the common uses on [Brother’s QL
 
 The compact **Fragile · Black/red tape** sample has an original broken-glass icon
 and red lettering. Its roll, orientation, margins, and resolution are saved with
-the label. Printing on physical hardware asks you to confirm black/red tape is
-loaded because the status reader cannot distinguish it from ordinary 62 mm tape.
+the label. The driver recognizes the two-color flag when the printer reports it. Otherwise,
+printing asks you to confirm black/red tape is loaded. See [USB status details](docs/usb-status.md).
 The image is horizontal across the roll, with roughly 23 mm of rendered content
 along the feed direction, plus the printer's feed/cut allowance.
 

@@ -104,7 +104,7 @@ Open **Settings** to set the default typeface, text size, orientation, roll, and
 The settings apply to new labels; existing saved documents retain their formatting.
 New-label actions fetch the current settings so other devices pick up changes too.
 The printer status supplies roll dimensions. Where several rolls share dimensions
-(such as 62 mm black-only and black/red), choose the exact stock manually.
+(such as 62 mm black-only and black/red without a positive color flag), choose the exact stock manually. See [USB status details](docs/usb-status.md).
 
 Settings live in `settings.json` and downloaded/uploaded fonts in `fonts/`, next to
 `STUDIO_LABELS_DIR`, or under `STUDIO_DATA_DIR` if set. With the included Pi deployment,
