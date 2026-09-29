@@ -9,7 +9,10 @@ const markSchema = z.discriminatedUnion("type", [
     z.object({
         type: z.literal("textStyle"),
         attrs: z
-            .object({ fontSize: z.string().nullable().optional() })
+            .object({
+                fontSize: z.string().nullable().optional(),
+                font: z.string().nullable().optional(),
+            })
             .optional(),
     }),
 ]);
@@ -57,6 +60,7 @@ export function fromDocument(value: unknown): TextContent {
                 if (mark.type === "bold") run.bold = true;
                 if (mark.type === "italic") run.italic = true;
                 if (mark.type === "textStyle") {
+                    if (mark.attrs?.font) run.font = mark.attrs.font;
                     const size = fontSize(mark.attrs?.fontSize);
                     if (size !== undefined) run.size = size;
                 }
@@ -91,11 +95,16 @@ export function toDocument(value: TextContent): JSONContent {
                     marks: [
                         ...(run.bold ? [{ type: "bold" }] : []),
                         ...(run.italic ? [{ type: "italic" }] : []),
-                        ...(run.size
+                        ...(run.size || run.font
                             ? [
                                   {
                                       type: "textStyle",
-                                      attrs: { fontSize: `${run.size}px` },
+                                      attrs: {
+                                          fontSize: run.size
+                                              ? `${run.size}px`
+                                              : null,
+                                          font: run.font ?? null,
+                                      },
                                   },
                               ]
                             : []),

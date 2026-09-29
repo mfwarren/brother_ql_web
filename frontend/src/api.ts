@@ -7,6 +7,7 @@ const imageSchema = z.object({
 });
 export const textRunSchema = z.object({
     text: z.string(),
+    font: z.string().optional(),
     size: z.number().int().min(8).max(200).optional(),
     bold: z.boolean().optional(),
     italic: z.boolean().optional(),

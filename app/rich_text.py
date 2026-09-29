@@ -26,10 +26,17 @@ def validate_paragraphs(paragraphs, plain_text):
             raise ValueError('Too many formatting changes in this label.')
         line = ''
         for run in runs:
-            if not isinstance(run, dict) or set(run) - {'text', 'size', 'bold', 'italic'}:
+            if not isinstance(run, dict) or set(run) - {'text', 'size', 'bold', 'italic', 'font'}:
                 raise ValueError('Invalid formatted text.')
             if not isinstance(run.get('text'), str) or '\n' in run['text'] or '\r' in run['text']:
                 raise ValueError('Use separate paragraphs for line breaks.')
+            if 'font' in run:
+                if not isinstance(run['font'], str):
+                    raise ValueError('Choose an installed font.')
+                try:
+                    app_module.FONTS.get_path(run['font'])
+                except (ValueError, LookupError):
+                    raise ValueError('Choose an installed font.')
             if 'size' in run and (type(run['size']) is not int or not 8 <= run['size'] <= 200):
                 raise ValueError('Text size must be between 8 and 200 px.')
             for mark in ('bold', 'italic'):
@@ -45,7 +52,7 @@ def text_image(draft, width, height):
     fonts = {}
     registry = app_module.FONTS
     def get_font(run):
-        name = registry.styled_face(draft['font'], run.get('bold', False), run.get('italic', False))
+        name = registry.styled_face(run.get('font', draft['font']), run.get('bold', False), run.get('italic', False))
         size = run.get('size', draft['fontSize'])
         key = (name, size)
         if key not in fonts:

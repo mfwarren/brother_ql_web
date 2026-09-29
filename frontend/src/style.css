@@ -1407,3 +1407,40 @@ details[open] summary > svg:last-child {
     padding: 6px;
     flex-shrink: 0;
 }
+
+/* Reserve the preview viewport during rendering and across label dimensions. */
+.preview-stage {
+    height: 340px;
+    min-height: 340px;
+    max-height: 340px;
+    overflow: hidden;
+}
+@media (max-width: 1099px) {
+    .preview-stage {
+        height: 230px;
+        min-height: 230px;
+        max-height: 230px;
+    }
+    .label-artwork img {
+        max-height: 180px;
+    }
+}
+.rich-toolbar .rich-font {
+    flex: 1 1 180px;
+    min-width: 0;
+    max-width: 100%;
+}
+.rich-size {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+}
+.rich-size input {
+    width: 68px;
+    min-height: 34px;
+    padding: 5px;
+}
+.rich-size input::-webkit-inner-spin-button {
+    opacity: 1;
+}

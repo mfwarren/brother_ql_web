@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { Extension } from "@tiptap/core";
 import { Plugin } from "@tiptap/pm/state";
@@ -47,6 +47,30 @@ const labelSize = FontSize.extend({
         ];
     },
 });
+const labelFont = Extension.create({
+    name: "labelFont",
+    addGlobalAttributes() {
+        return [
+            {
+                types: ["textStyle"],
+                attributes: {
+                    font: {
+                        default: null,
+                        parseHTML: (element) =>
+                            element.getAttribute("data-label-font"),
+                        renderHTML: (attrs) =>
+                            typeof attrs.font === "string"
+                                ? {
+                                      "data-label-font": attrs.font,
+                                      style: `font-family:"LabelFace${encodeURIComponent(attrs.font)}"`,
+                                  }
+                                : {},
+                    },
+                },
+            },
+        ];
+    },
+});
 const extensions = [
     StarterKit.configure({
         heading: false,
@@ -65,8 +89,40 @@ const extensions = [
     }),
     TextStyle,
     labelSize,
+    labelFont,
     limits,
 ];
+
+function TextSize({
+    value,
+    onChange,
+}: {
+    value: number;
+    onChange: (size: number) => void;
+}) {
+    const [text, setText] = useState(String(value));
+    useEffect(() => setText(String(value)), [value]);
+    return (
+        <label className="rich-size">
+            <input
+                type="number"
+                aria-label="Text size in pixels"
+                min={8}
+                max={200}
+                step={1}
+                value={text}
+                onChange={(event) => {
+                    setText(event.target.value);
+                    const next = event.target.valueAsNumber;
+                    if (Number.isInteger(next) && next >= 8 && next <= 200)
+                        onChange(next);
+                }}
+                onBlur={() => setText(String(value))}
+            />
+            <span>px</span>
+        </label>
+    );
+}
 
 type Props = {
     value: TextContent;
@@ -117,29 +173,30 @@ export default function RichTextEditor({
             emitted.current.clear();
         }
     }, [editor, valueKey]);
-    const base = fonts.find((face) => face.id === font);
-    const family = font.split(",")[0];
-    const normal = fonts.filter(
-        (face) => face.id.split(",")[0] === family && !face.italic,
-    );
-    const italic = fonts.filter(
-        (face) => face.id.split(",")[0] === family && face.italic,
-    );
-    const closest = (faces: Config["fonts"], weight: number) =>
-        [...faces].sort(
-            (a, b) => Math.abs(a.weight - weight) - Math.abs(b.weight - weight),
-        )[0];
-    const faces = [
-        closest(normal, base?.weight ?? 400),
-        closest(normal, 700),
-        closest(italic, base?.weight ?? 400),
-        closest(italic, 700),
-    ].filter((face) => face !== undefined);
-    const styles = faces
-        .map(
-            (face) =>
-                `@font-face{font-family:LabelEditorFont;src:url("/studio/api/fonts/file?font=${encodeURIComponent(face.id)}");font-weight:${face.weight};font-style:${face.italic ? "italic" : "normal"};font-display:swap;}`,
-        )
+    const styles = fonts
+        .map((baseFace) => {
+            const family = baseFace.id.split(",")[0];
+            return [false, true]
+                .flatMap((bold) =>
+                    [false, true].map((italic) => {
+                        const candidates = fonts.filter(
+                            (face) =>
+                                face.id.split(",")[0] === family &&
+                                face.italic === (italic || baseFace.italic),
+                        );
+                        const weight = bold ? 700 : baseFace.weight;
+                        const face = [...candidates].sort(
+                            (a, b) =>
+                                Math.abs(a.weight - weight) -
+                                Math.abs(b.weight - weight),
+                        )[0];
+                        return face
+                            ? `@font-face{font-family:"LabelFace${encodeURIComponent(baseFace.id)}";src:url("/studio/api/fonts/file?font=${encodeURIComponent(face.id)}");font-weight:${bold ? 700 : 400};font-style:${italic ? "italic" : "normal"};font-display:swap;}`
+                            : "";
+                    }),
+                )
+                .join("\n");
+        })
         .join("\n");
     if (!editor) return null;
     const selectedSize = fontSize(editor.getAttributes("textStyle").fontSize);
@@ -151,6 +208,30 @@ export default function RichTextEditor({
                 role="toolbar"
                 aria-label="Text formatting"
             >
+                <select
+                    aria-label="Text font"
+                    className="rich-font"
+                    value={editor.getAttributes("textStyle").font ?? font}
+                    onChange={(event) =>
+                        editor
+                            .chain()
+                            .focus()
+                            .setMark("textStyle", { font: event.target.value })
+                            .run()
+                    }
+                >
+                    {fonts.map((face) => (
+                        <option key={face.id} value={face.id}>
+                            {face.name}
+                        </option>
+                    ))}
+                </select>
+                <TextSize
+                    value={selectedSize ?? size}
+                    onChange={(next) =>
+                        editor.chain().setFontSize(`${next}px`).run()
+                    }
+                />
                 <button
                     type="button"
                     className="icon-button"
@@ -171,48 +252,21 @@ export default function RichTextEditor({
                 >
                     <Italic size={16} />
                 </button>
-                <select
-                    aria-label="Selected text size"
-                    value={selectedSize ?? ""}
-                    onChange={(event) => {
-                        if (event.target.value)
-                            editor
-                                .chain()
-                                .focus()
-                                .setFontSize(`${event.target.value}px`)
-                                .run();
-                        else editor.chain().focus().unsetFontSize().run();
-                    }}
-                >
-                    <option value="">Default size</option>
-                    {[
-                        ...new Set([
-                            24,
-                            32,
-                            40,
-                            48,
-                            56,
-                            70,
-                            80,
-                            96,
-                            120,
-                            160,
-                            ...(selectedSize ? [selectedSize] : []),
-                        ]),
-                    ]
-                        .sort((a, b) => a - b)
-                        .map((value) => (
-                            <option key={value} value={value}>
-                                {value} px
-                            </option>
-                        ))}
-                </select>
                 <button
                     type="button"
                     className="icon-button"
                     aria-label="Clear selected formatting"
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => editor.chain().focus().unsetBold().unsetItalic().unsetFontSize().run()}
+                    onClick={() =>
+                        editor
+                            .chain()
+                            .focus()
+                            .unsetBold()
+                            .unsetItalic()
+                            .unsetFontSize()
+                            .setMark("textStyle", { font: null })
+                            .run()
+                    }
                 >
                     <RemoveFormatting size={16} />
                 </button>
@@ -241,9 +295,9 @@ export default function RichTextEditor({
                 className="rich-text-area"
                 style={{
                     fontSize: `${size}px`,
-                    fontFamily: "LabelEditorFont, sans-serif",
-                    fontWeight: base?.weight ?? 400,
-                    fontStyle: base?.italic ? "italic" : "normal",
+                    fontFamily: `"LabelFace${encodeURIComponent(font)}", sans-serif`,
+                    fontWeight: 400,
+                    fontStyle: "normal",
                 }}
             >
                 <EditorContent editor={editor} />

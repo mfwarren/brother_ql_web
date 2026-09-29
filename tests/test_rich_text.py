@@ -132,3 +132,22 @@ def test_words_wrap_without_discarding_formatting(client):
     assert_png(result)
     image=Image.open(io.BytesIO(result.data))
     assert image.height > 100
+
+
+def test_inline_fonts_survive_save_and_change_raster(client, isolated_fonts, monkeypatch, tmp_path):
+    result, _, _ = install_test_family(client, monkeypatch, tmp_path)
+    value = rich_draft(client)
+    for paragraph in value['content']['paragraphs']:
+        for run in paragraph['runs']:
+            run.pop('italic', None)
+    original = client.post('/studio/api/preview', json=value)
+    assert_png(original)
+    value['content']['paragraphs'][0]['runs'][0]['font'] = result['font']
+    changed = client.post('/studio/api/preview', json=value)
+    assert_png(changed)
+    assert original.data != changed.data
+    saved = client.post('/studio/api/labels', json={'name':'Mixed fonts','draft':value}).json
+    assert saved['draft']['content'] == value['content']
+    assert client.post('/studio/api/preview', json=saved['draft']).data == changed.data
+    value['content']['paragraphs'][0]['runs'][0]['font'] = '/etc/passwd'
+    assert client.post('/studio/api/preview', json=value).status_code == 400

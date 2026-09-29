@@ -915,65 +915,71 @@ export default function App() {
                                                     </>
                                                 )}
                                                 <div className="section-divider" />
-                                                <div className="two-fields font-fields">
-                                                    <label className="field">
-                                                        Typeface
-                                                        <select
-                                                            value={draft.font}
-                                                            onChange={(event) =>
-                                                                update({
-                                                                    font: event
-                                                                        .target
-                                                                        .value,
-                                                                })
-                                                            }
-                                                        >
-                                                            {config.fonts.map(
-                                                                (font) => (
-                                                                    <option
-                                                                        key={
-                                                                            font.id
-                                                                        }
-                                                                        value={
-                                                                            font.id
-                                                                        }
-                                                                    >
-                                                                        {
-                                                                            font.name
-                                                                        }
-                                                                    </option>
-                                                                ),
-                                                            )}
-                                                        </select>
-                                                    </label>
-                                                    <label className="field">
-                                                        {draft.content.kind ===
-                                                        "text"
-                                                            ? "Default size"
-                                                            : "Size"}{" "}
-                                                        <span className="optional">
-                                                            px
-                                                        </span>
-                                                        <input
-                                                            type="number"
-                                                            min={8}
-                                                            max={200}
-                                                            value={
-                                                                draft.fontSize
-                                                            }
-                                                            onChange={(event) =>
-                                                                update({
-                                                                    fontSize:
-                                                                        Number(
-                                                                            event
-                                                                                .target
-                                                                                .value,
-                                                                        ),
-                                                                })
-                                                            }
-                                                        />
-                                                    </label>
-                                                </div>
+                                                {draft.content.kind !==
+                                                    "text" && (
+                                                    <div className="two-fields font-fields">
+                                                        <label className="field">
+                                                            Typeface
+                                                            <select
+                                                                value={
+                                                                    draft.font
+                                                                }
+                                                                onChange={(
+                                                                    event,
+                                                                ) =>
+                                                                    update({
+                                                                        font: event
+                                                                            .target
+                                                                            .value,
+                                                                    })
+                                                                }
+                                                            >
+                                                                {config.fonts.map(
+                                                                    (font) => (
+                                                                        <option
+                                                                            key={
+                                                                                font.id
+                                                                            }
+                                                                            value={
+                                                                                font.id
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                font.name
+                                                                            }
+                                                                        </option>
+                                                                    ),
+                                                                )}
+                                                            </select>
+                                                        </label>
+                                                        <label className="field">
+                                                            Size{" "}
+                                                            <span className="optional">
+                                                                px
+                                                            </span>
+                                                            <input
+                                                                type="number"
+                                                                min={8}
+                                                                max={200}
+                                                                value={
+                                                                    draft.fontSize
+                                                                }
+                                                                onChange={(
+                                                                    event,
+                                                                ) =>
+                                                                    update({
+                                                                        fontSize:
+                                                                            Number(
+                                                                                event
+                                                                                    .target
+                                                                                    .value,
+                                                                            ),
+                                                                    })
+                                                                }
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                )}
                                                 <div className="format-row">
                                                     <div
                                                         className="segmented"
