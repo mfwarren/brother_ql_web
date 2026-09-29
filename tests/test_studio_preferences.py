@@ -109,3 +109,52 @@ def test_existing_settings_enable_detection_without_changing_fallback(client):
         (root / 'settings.json').write_text(json.dumps({'version': 1, 'defaults': settings}))
     loaded = client.get('/studio/api/config').json['defaults']
     assert loaded == {**settings, 'autoDetectRoll': True}
+
+
+
+def test_catalog_keeps_regional_codes_on_one_geometry(client):
+    from app.labeldesigner.media_catalog import CATALOG
+    from brother_ql.labels import ALL_LABELS
+    assert set(CATALOG) <= {label.identifier for label in ALL_LABELS}
+    codes = [code for row in CATALOG.values() for code in row['codes']]
+    assert len(codes) == len(set(codes))
+    sizes = {size['id']: size for size in client.get('/studio/api/config').json['sizes']}
+    assert sizes['29x90']['codes'] == ['DK-1201', 'DK-11201']
+    assert sizes['62red']['codes'] == ['DK-2251', 'DK-22251']
+    assert 'DK-2212' in sizes['62']['codes']
+    assert not any(identifier.startswith('pt') for identifier in sizes)
+    assert '102' not in sizes
+
+
+def test_catalog_filters_printer_families_and_color_capability():
+    from app.labeldesigner.media_catalog import supported_labels
+    assert '62red' not in {label.identifier for label in supported_labels('QL-700')}
+    wide = {label.identifier for label in supported_labels('QL-1100')}
+    assert {'102', '102x51', '102x152'} <= wide
+    assert {label.identifier for label in supported_labels('PT-P750W')} == {'pt12', 'pt18', 'pt24', 'pt36'}
+
+
+@pytest.mark.parametrize('identifier,width,length,media_type', [
+    ('17x54', 17, 54, 'Die-cut labels'),
+    ('17x87', 17, 87, 'Die-cut labels'),
+    ('23x23', 23, 23, 'Die-cut labels'),
+    ('39x90', 38, 90, 'Die-cut labels'),
+    ('62x29', 62, 29, 'Die-cut labels'),
+    ('60x86', 60, 87, 'Die-cut labels'),
+    ('62x100', 62, 100, 'Die-cut labels'),
+    ('d12', 12, 12, 'Die-cut labels'),
+    ('d24', 24, 24, 'Die-cut labels'),
+    ('d58', 58, 58, 'Die-cut labels'),
+    ('18', 18, 0, 'Continuous length tape'),
+    ('29', 29, 0, 'Continuous length tape'),
+    ('38', 38, 0, 'Continuous length tape'),
+    ('50', 50, 0, 'Continuous length tape'),
+    ('54', 54, 0, 'Continuous length tape'),
+])
+def test_other_roll_status_dimensions_match_existing_geometry(client, identifier, width, length, media_type):
+    from app.studio import _status_from_raw
+    raw = {'model':'QL-800', 'media_type':media_type, 'media_width':width, 'media_length':length,
+           'media_color':'black', 'status_type':'Reply to status request', 'status_code':0,
+           'phase_type':'Waiting to receive'}
+    with client.application.app_context():
+        assert _status_from_raw(raw, 'QL-800')['matchingSizes'] == [identifier]

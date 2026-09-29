@@ -1326,3 +1326,26 @@ details[open] summary > svg:last-child {
         padding-bottom: 225px;
     }
 }
+
+.roll-catalog {
+    margin-top: 16px;
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+}
+.roll-catalog summary {
+    cursor: pointer;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+.roll-catalog-list {
+    max-height: 300px;
+    overflow: auto;
+}
+.roll-catalog-row {
+    display: grid;
+    gap: 4px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}

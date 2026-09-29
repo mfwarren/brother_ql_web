@@ -1,0 +1,162 @@
+{
+  "12": {
+    "description": "Continuous paper",
+    "codes": [
+      "DK-2214",
+      "DK-22214"
+    ]
+  },
+  "29": {
+    "description": "Continuous paper or film",
+    "codes": [
+      "DK-2210",
+      "DK-22210",
+      "DK-2211",
+      "DK-22211"
+    ]
+  },
+  "38": {
+    "description": "Continuous paper",
+    "codes": [
+      "DK-2225",
+      "DK-22225"
+    ]
+  },
+  "50": {
+    "description": "Continuous paper",
+    "codes": [
+      "DK-2223",
+      "DK-22223"
+    ]
+  },
+  "54": {
+    "description": "Continuous non-adhesive paper",
+    "codes": [
+      "DK-N5224",
+      "DK-N55224",
+      "DK-55224"
+    ]
+  },
+  "62": {
+    "description": "Continuous paper, film, clear, yellow, or removable stock",
+    "codes": [
+      "DK-2205",
+      "DK-22205",
+      "DK-2212",
+      "DK-22212",
+      "DK-2113",
+      "DK-22113",
+      "DK-2606",
+      "DK-22606",
+      "DK-4205",
+      "DK-44205",
+      "DK-4605",
+      "DK-44605"
+    ]
+  },
+  "62red": {
+    "description": "Continuous black/red on white",
+    "codes": [
+      "DK-2251",
+      "DK-22251"
+    ]
+  },
+  "17x54": {
+    "description": "Multipurpose / return address",
+    "codes": [
+      "DK-1204",
+      "DK-11204"
+    ]
+  },
+  "17x87": {
+    "description": "File folder",
+    "codes": [
+      "DK-1203",
+      "DK-11203"
+    ]
+  },
+  "23x23": {
+    "description": "Square",
+    "codes": [
+      "DK-1221",
+      "DK-11221"
+    ]
+  },
+  "29x90": {
+    "description": "Standard address",
+    "codes": [
+      "DK-1201",
+      "DK-11201"
+    ]
+  },
+  "39x90": {
+    "description": "Large address",
+    "codes": [
+      "DK-1208",
+      "DK-11208"
+    ]
+  },
+  "62x29": {
+    "description": "Small address",
+    "codes": [
+      "DK-1209",
+      "DK-11209"
+    ]
+  },
+  "60x86": {
+    "description": "Visitor badge (marketed as 60 × 86 mm)",
+    "codes": [
+      "DK-1234",
+      "DK-11234"
+    ]
+  },
+  "62x100": {
+    "description": "Shipping",
+    "codes": [
+      "DK-1202",
+      "DK-11202"
+    ]
+  },
+  "d12": {
+    "description": "Round",
+    "codes": [
+      "DK-1219",
+      "DK-11219"
+    ]
+  },
+  "d24": {
+    "description": "Round",
+    "codes": [
+      "DK-1218",
+      "DK-11218"
+    ]
+  },
+  "d58": {
+    "description": "CD/DVD round film",
+    "codes": [
+      "DK-1207",
+      "DK-11207"
+    ]
+  },
+  "102": {
+    "description": "Wide continuous paper",
+    "codes": [
+      "DK-2243",
+      "DK-22243"
+    ]
+  },
+  "102x51": {
+    "description": "Wide multipurpose",
+    "codes": [
+      "DK-1240",
+      "DK-11240"
+    ]
+  },
+  "102x152": {
+    "description": "Wide shipping (marketed as 102 × 152 mm)",
+    "codes": [
+      "DK-1241",
+      "DK-11241"
+    ]
+  }
+}

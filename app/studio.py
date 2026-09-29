@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-from brother_ql.labels import ALL_LABELS
+from app.labeldesigner.media_catalog import supported_labels, label_info
 from flask import Blueprint, current_app, jsonify, make_response, request, send_from_directory
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.datastructures import FileStorage
@@ -68,7 +68,7 @@ def _bool(value, name):
 
 def _sizes():
     model = current_app.config['PRINTER_MODEL']
-    return [label for label in ALL_LABELS if not label.restricted_to_models or model in label.restricted_to_models]
+    return supported_labels(model)
 
 
 def _validate_draft(draft):
@@ -302,7 +302,7 @@ def config():
     from app.studio_preferences import defaults, font_list
     preferences = defaults()
     return {'model': current_app.config['PRINTER_MODEL'], 'fonts': font_list(),
-            'sizes': [{'id': label.identifier, 'name': label.name} for label in _sizes()],
+            'sizes': [label_info(label) for label in _sizes()],
             'defaultFont': preferences['font'], 'defaultSize': preferences['sizeId'],
             'defaults': preferences,
             'mode': 'simulation' if _device() == 'simulation' else 'physical'}

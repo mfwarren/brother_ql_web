@@ -18,6 +18,7 @@ type Props = {
 export default function SettingsView({ config, status, onConfig }: Props) {
     const [values, setValues] = useState<Defaults>(config.defaults);
     const [families, setFamilies] = useState<FontFamily[]>([]);
+    const [rollQuery, setRollQuery] = useState("");
     const [query, setQuery] = useState("");
     const [limit, setLimit] = useState(30);
     const [busy, setBusy] = useState("");
@@ -84,6 +85,16 @@ export default function SettingsView({ config, status, onConfig }: Props) {
     }
     const found = families.filter((f) =>
         f.name.toLowerCase().includes(query.toLowerCase()),
+    );
+    const normalizeRoll = (value: string) =>
+        value
+            .toLowerCase()
+            .replaceAll("×", "x")
+            .replace(/[^a-z0-9]/g, "");
+    const rolls = config.sizes.filter((size) =>
+        normalizeRoll(
+            [size.id, size.name, size.description, ...size.codes].join(" "),
+        ).includes(normalizeRoll(rollQuery)),
     );
     const matches = status?.matchingSizes ?? [];
     const detected = matches.length === 1 ? matches[0] : undefined;
@@ -223,6 +234,41 @@ export default function SettingsView({ config, status, onConfig }: Props) {
                     and manual roll choices stay fixed. The fallback is used
                     when detection is unavailable.
                 </p>
+                <details className="roll-catalog">
+                    <summary>Label roll codes</summary>
+                    <label className="field">
+                        Find a roll
+                        <input
+                            type="search"
+                            placeholder="Code or size, e.g. 201 or 29x90"
+                            value={rollQuery}
+                            onChange={(event) =>
+                                setRollQuery(event.target.value)
+                            }
+                        />
+                    </label>
+                    <p className="small muted">
+                        Codes vary by region. These share the listed print size;
+                        detection cannot identify adhesive, paper versus film,
+                        or the exact product code.
+                    </p>
+                    <div className="roll-catalog-list">
+                        {rolls.map((size) => (
+                            <div className="roll-catalog-row" key={size.id}>
+                                <strong>{size.name}</strong>
+                                <span>{size.description}</span>
+                                {size.codes.length > 0 && (
+                                    <span className="muted">
+                                        {size.codes.join(" · ")}
+                                    </span>
+                                )}
+                            </div>
+                        ))}
+                        {rolls.length === 0 && (
+                            <p>No matching supported rolls.</p>
+                        )}
+                    </div>
+                </details>
                 {message && (
                     <p className="settings-message" role="status">
                         {message}

@@ -36,6 +36,9 @@ along the feed direction, plus the printer's feed/cut allowance.
 
 ![Fragile label](docs/samples/fragile.png)
 
+Settings includes a searchable [Brother DK roll catalog](docs/label-roll-catalog.md)
+with 55 regional product codes mapped to 21 supported driver profiles.
+
 ## What changes
 
 | Area | Label Studio | Classic editor, still included |

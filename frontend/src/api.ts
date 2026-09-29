@@ -51,7 +51,14 @@ const configSchema = z.object({
     model: z.string(),
     fonts: fontsSchema,
     defaults: defaultsSchema,
-    sizes: z.array(z.object({ id: z.string(), name: z.string() })),
+    sizes: z.array(
+        z.object({
+            id: z.string(),
+            name: z.string(),
+            codes: z.array(z.string()).default([]),
+            description: z.string().default(""),
+        }),
+    ),
     defaultFont: z.string(),
     defaultSize: z.string(),
     mode: z.enum(["simulation", "physical"]),
