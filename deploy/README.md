@@ -1,46 +1,42 @@
 # Raspberry Pi deployment
 
-This installation uses prebuilt React assets and a native Python virtual environment on Raspberry Pi OS 12, armv7l. Node is only needed on the build machine. Install `requirements-server.txt` and use `serve.py` for the Waitress production server.
+The tested host is a Raspberry Pi 3 running 32-bit Raspberry Pi OS 12. Follow [STUDIO.md](../STUDIO.md) to install system dependencies, extract the release archive, create a virtual environment, and test the simulator first. Use `requirements-server.txt` and `serve.py` for Waitress. Node is only required on a frontend build machine.
 
-The provided service template uses the local `matt` user, supplementary `lp` group, and only the capability needed to bind port 80. Adjust the user for another machine. Configuration is kept in `/etc/label-studio/application.py`, symlinked from the release's `instance/application.py`.
+## Production layout
 
-## Installed layout
+A suggested layout separates program files from persistent data:
 
+- `/opt/label-studio/releases/<version>`: extracted release and its `.venv`.
 - `/opt/label-studio/current`: symlink to the active release.
-- `/opt/label-studio/releases/20260929-8d15bb4`: initial deployed release, based on commit 8d15bb4 plus deployment changes. `DEPLOYED_COMMIT` records the final source commit.
-- `/var/lib/label-studio/labels`: modern saved labels.
-- `/var/lib/label-studio/classic-labels`: classic saved labels.
-- `/var/lib/label-studio/printer.lock`: shared physical-printer lock.
-- `/etc/systemd/system/label-studio.service`: production service.
-- `/opt/brother_ql_web`: preserved original installation.
+- `/etc/label-studio/application.py`: host configuration.
+- `/var/lib/label-studio/labels`: modern label library.
+- `/var/lib/label-studio/classic-labels`: classic library.
+- `/var/lib/label-studio/fonts` and `settings.json`: installed fonts and defaults.
+- `/var/lib/label-studio/printer.lock`: shared printer lock.
 
-The listener is port 80 and the physical printer is `file:///dev/usb/lp0`. The webhook remains disabled. During preparation, the candidate server runs only on loopback port 8020 in simulation mode.
+Create these directories with ownership appropriate to your service account. Copy [application.py.example](application.py.example) to `/etc/label-studio/application.py`, then review the printer model, USB device, and data paths. Create `instance/` inside the release and symlink `instance/application.py` to that configuration file. Set `STUDIO_DATA_DIR = '/var/lib/label-studio'` if using a different label-directory layout.
 
-## Operations
+## Port 80 service
+
+Copy [label-studio.service](label-studio.service) to `/etc/systemd/system/label-studio.service`. **Change `User=matt` and `Group=matt` to your service account**, and adjust paths if needed. The account needs read access to the release and configuration, write access to `/var/lib/label-studio`, and access to the printer device. The template grants supplementary `lp` membership and the capability to bind port 80 without running the application as root.
 
 ```sh
+sudo systemctl daemon-reload
+sudo systemctl enable --now label-studio
 sudo systemctl status label-studio
+```
+
+Open `http://<pi-hostname>.local/studio/`, or use its IP address. `.local` discovery requires working mDNS on your network. If another web server already occupies port 80, choose another port or configure that server as a proxy.
+
+## Operations and upgrades
+
+```sh
 sudo journalctl -u label-studio -n 50 --no-pager
 sudo systemctl restart label-studio
 ```
 
-Back up `/var/lib/label-studio` and `/etc/label-studio` before upgrades. Build and validate a new release separately, then switch the `current` symlink and restart. Avoid printing during a release switch.
+Back up `/var/lib/label-studio` and `/etc/label-studio` before upgrades, including hidden sample-initialization files. Extract a new release into a new directory, create its virtual environment and configuration symlink, and validate it in simulation before switching `current` and restarting. Avoid printing during the switch. Keep the previous release so you can restore its symlink and restart if needed.
 
-## Roll back to the original app
+When migrating from an older Brother QL Web installation, retain its files, service definition, and label library until the new service is verified. Stop the old listener before starting the new port-80 service. The classic and Studio libraries are separate; see [migration tradeoffs](../docs/migration.md).
 
-```sh
-sudo systemctl disable --now label-studio.service
-sudo systemctl enable --now brother_ql_web.service
-```
-
-This restores the original port-80 app. It does not delete modern labels or change the printer's Auto Power Off setting. To switch back:
-
-```sh
-sudo systemctl disable --now brother_ql_web.service
-sudo systemctl enable --now label-studio.service
-```
-
-UI preferences and installed fonts persist alongside the label library in
-`/var/lib/label-studio/settings.json` and `/var/lib/label-studio/fonts/`. Include
-both in backups. No extra deployment configuration is needed. Set `STUDIO_DATA_DIR`
-only when these should live somewhere other than the parent of `STUDIO_LABELS_DIR`.
+The app has no user accounts and is intended for a trusted local network. Do not forward its port to the public internet. The webhook endpoint is disabled unless explicitly configured.

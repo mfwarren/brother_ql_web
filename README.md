@@ -2,7 +2,19 @@
 
 A compact React interface for a shared Brother label printer. Desktop toolbar and saved-label sidebar, a touch layout for tablets, and a phone editor with a fixed print bar. Flask serves the built interface and handles rendering and printing; no Node server runs on the printer host.
 
-**Development preview.** A native deployment on a 32-bit Raspberry Pi 3 is running with the QL-800 detected and ready. Renderer, storage, and USB tests pass on the Pi; physical print quality and optional hardware modes still need user validation. [Deployment and rollback](deploy/README.md).
+[![Label Studio checks](https://github.com/mfwarren/brother_ql_web/actions/workflows/studio.yml/badge.svg?branch=modern-interface)](https://github.com/mfwarren/brother_ql_web/actions/workflows/studio.yml)
+
+**First public release: v0.1.0.** Built for a printer shared around a home or small workspace, with no user accounts. Tested on a Raspberry Pi 3 with a USB Brother QL-800. Other supported printer models welcome community testing.
+
+[Download the release](https://github.com/mfwarren/brother_ql_web/releases/latest) · [Install and run](STUDIO.md) · [Report a bug or suggest a feature](https://github.com/mfwarren/brother_ql_web/issues)
+
+- Mix fonts, weights, sizes, italics, and underlines within a label.
+- Save labels with their paper settings and reprint them quickly.
+- Detect loaded QL-800 media and warn before printing onto the wrong stock.
+- Install Google Fonts locally, with native variable-font rendering.
+- Use the same compact editor on desktop, tablet, or phone.
+
+The release archive includes the built interface, so the Pi only runs Python.
 
 ![Label Studio desktop](docs/design/desktop.png)
 
@@ -14,7 +26,7 @@ The experimental [QL-800 settings utility](docs/linux-power-settings.md) can rea
 
 ## Ready-to-print samples
 
-First installs include nine examples: storage bin, asset QR tag, handling arrows, mailing address, file folder, visitor badge, inventory barcode, guest Wi-Fi QR, and a red Fragile label. Eight use standard 62 mm tape; Fragile is saved for 62 mm black/red tape. The QR encodes the sample identifier `ASSET-0042`. Open one from Labels, edit if needed, and print. The mailing address and Wi-Fi credentials are placeholders. The inventory barcode is a fixed image encoding `SKU-0042`; editing its caption does not change the barcode. Use the advanced editor to generate a different linear barcode. Samples are created once; deleted samples stay deleted and existing libraries are preserved.
+First installs include nine examples: storage bin, asset QR tag, handling arrows, mailing address, file folder, visitor badge, inventory barcode, guest Wi-Fi QR, and a red Fragile label. Eight use standard 62 mm tape; Fragile is saved for 62 mm black/red tape. The asset QR encodes the sample identifier `ASSET-0042`. Open one from Labels, edit if needed, and print. The mailing address and Wi-Fi credentials are placeholders. The inventory barcode is a fixed image encoding `SKU-0042`; editing its caption does not change the barcode. Use the advanced editor to generate a different linear barcode. Samples are created once; deleted samples stay deleted and existing libraries are preserved.
 
 | Text | QR | Image |
 | --- | --- | --- |
@@ -44,7 +56,7 @@ with 55 regional product codes mapped to 21 supported driver profiles.
 | Area | Label Studio | Classic editor, still included |
 | --- | --- | --- |
 | Interface | React, TypeScript, custom CSS; desktop, tablet, phone layouts | Bootstrap 5 and jQuery |
-| Labels | Multiline text, QR with caption, images and first PDF page | Per-line formatting, barcodes, templates, symbol picker |
+| Labels | Rich text with per-selection fonts/styles, vertical alignment, QR with caption, images and first PDF page | Per-line formatting, barcodes, templates, symbol picker |
 | Saved labels | Separate versioned JSON library, duplicate and quick print | Existing upstream library remains available |
 | Printer | Status checks, bounded USB reads, shared printer lock, roll-size checks | Uses the same lock for physical access |
 | Deployment | Build static assets, serve with Python | Available at `/labeldesigner/` |
