@@ -32,6 +32,14 @@ def query_printer_status(device_specifier, timeout=3.0):
 
     fd = os.open(device_specifier[7:], os.O_RDWR | os.O_NONBLOCK)
     try:
+        drain_until = time.monotonic() + 0.1
+        while time.monotonic() < drain_until:
+            if select.select([fd], [], [], 0)[0]:
+                try:
+                    os.read(fd, 4096)
+                except BlockingIOError:
+                    pass
+            time.sleep(0.005)
         os.write(fd, b'\x1b\x69\x53')
         deadline = time.monotonic() + timeout
         response = bytearray()
@@ -47,7 +55,8 @@ def query_printer_status(device_specifier, timeout=3.0):
             except BlockingIOError:
                 continue
             if not chunk:
-                raise OSError('Printer closed during status query')
+                time.sleep(min(0.01, max(0, deadline - time.monotonic())))
+                continue
             response.extend(chunk)
         return interpret_response(response)
     finally:

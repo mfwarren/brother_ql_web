@@ -2,7 +2,7 @@
 
 A compact React interface for a shared Brother label printer. Desktop toolbar and saved-label sidebar, a touch layout for tablets, and a phone editor with a fixed print bar. Flask serves the built interface and handles rendering and printing; no Node server runs on the printer host.
 
-**Development preview.** Local renderer and simulator tests pass. Deployment and physical printing with this branch on a 32-bit Raspberry Pi are not yet verified. The existing app can remain in service while you evaluate this version separately.
+**Development preview.** A native deployment on a 32-bit Raspberry Pi 3 is running with the QL-800 detected and ready. Renderer, storage, and USB tests pass on the Pi; physical print quality and optional hardware modes still need user validation. [Deployment and rollback](deploy/README.md).
 
 ![Label Studio desktop](docs/design/desktop.png)
 

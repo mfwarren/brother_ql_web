@@ -194,7 +194,8 @@ def test_pdf_converter_uses_only_first_page(monkeypatch):
     assert requested['last_page'] == 1
 
 
-def test_file_printer_status_reads_reply_and_times_out_when_silent():
+@pytest.mark.parametrize("transient_empty", [False, True])
+def test_file_printer_status_reads_reply_and_times_out_when_silent(monkeypatch, transient_empty):
     master, slave = pty.openpty()
     tty.setraw(slave)
     path = os.ttyname(slave)
@@ -202,6 +203,15 @@ def test_file_printer_status_reads_reply_and_times_out_when_silent():
     raw[:3] = b'\x80\x20\x42'
     raw[3], raw[4], raw[10], raw[11] = 52, 56, 62, 10
     seen = []
+    os.write(master, bytes(32))
+    original_read = os.read
+    pending_empty = [True] if transient_empty else []
+    def read(fd, size):
+        if size == 32 and pending_empty:
+            pending_empty.pop()
+            return b''
+        return original_read(fd, size)
+    monkeypatch.setattr(os, 'read', read)
 
     def reply():
         seen.append(os.read(master, 3))

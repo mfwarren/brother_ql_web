@@ -19,8 +19,8 @@ No user accounts are required. This is intended for a trusted local network; do 
 
 ## Deployment limits
 
-The QL-800 answered a status query with 62 mm continuous media and no errors. That does not establish print quality, red-media compatibility, or prevention of automatic power-off. The full Python dependency set still needs validation on 32-bit ARM. The Dockerfile builds React assets, but its container build was not verified locally.
+The QL-800 answered a status query with 62 mm continuous media and no errors. That does not establish print quality, red-media compatibility, or prevention of automatic power-off. The production dependency set now installs and runs on 32-bit ARM, with 37 tests passing on the Pi. The Dockerfile builds React assets, but its container build was not verified locally.
 
-Desktop and mobile screenshots show simulation mode. No new physical print was made during development. Auto Power Off can now be changed using the experimental [Linux utility](linux-power-settings.md). Its read-back was verified on one QL-800, but long-idle behavior and power-cycle persistence remain unverified. Brother's own USB utility remains the documented vendor method.
+The design screenshots show simulation mode. The Pi deployment now uses the physical USB device; print quality still needs user validation. Auto Power Off can now be changed using the experimental [Linux utility](linux-power-settings.md). Its read-back was verified on one QL-800, but long-idle behavior and power-cycle persistence remain unverified. Brother's own USB utility remains the documented vendor method.
 
 The root route opens `/studio/`; existing advanced-editor URLs continue to work. Preserve both saved-label directories and installed fonts during upgrades. To roll back, restore the previous app and service configuration; the recovered original installation was left unchanged during development.

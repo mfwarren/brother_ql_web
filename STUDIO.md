@@ -70,11 +70,13 @@ The Studio suite passes 25 tests and uses the real Python renderer and raster si
 
 The upstream repository suite has pre-existing failures on this Mac because some fixture fonts are absent and rendered PNG bytes differ from its reference environment. The Studio suite does not depend on those platform-specific byte snapshots.
 
-## Before Pi deployment
+## Raspberry Pi deployment
 
-The Pi's existing port-80 service has not been changed. A deployment must first verify the complete dependency set on its 32-bit ARM OS, use the physical USB device explicitly, and confirm a real printed label. Build the frontend off-device and copy the compiled `app/static/studio/` directory with the Python source. Preserve `instance/studio-labels/` across releases and back it up with configuration.
+The native application is deployed on the Raspberry Pi 3 running 32-bit Raspberry Pi OS 12. Waitress serves the compiled frontend and Python API on port 80 at `http://labels.local/`. The physical QL-800 reports ready with 62 mm continuous media. A real HTTP preview succeeded on the Pi, and 37 renderer/storage/USB tests passed there. The three QR decoder tests run on the development machine and CI, where the optional decoder is installed. All 40 local tests pass.
 
-The upstream published container workflow targets amd64 and arm64, so it does not directly cover this Pi's current armv7l system. A native environment or custom ARMv7 image remains to be tested. The updated Dockerfile builds the frontend assets, but a container build was not verified because Docker is unavailable on this development machine. Keep the application backup until the new service and rollback path have been verified. Port 80 and `labels.local` should remain the entry point when deployment is approved.
+The service runs as `matt` with supplementary `lp` access and the capability to bind port 80. Saved labels and configuration live outside the release directory. The original installation at `/opt/brother_ql_web` is preserved and its service is disabled. See [deployment paths and rollback commands](deploy/README.md).
+
+The full production dependency set installed successfully on armv7l. Container builds remain unverified; this deployment uses a native virtual environment. Physical print quality, red media, and high-resolution output still require user validation. Power-off configuration read-back succeeded, but no controlled idle/power-cycle persistence test has been completed.
 
 ## Compact interface
 

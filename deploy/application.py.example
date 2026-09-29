@@ -1,0 +1,10 @@
+PRINTER_MODEL = 'QL-800'
+PRINTER_PRINTER = 'file:///dev/usb/lp0'
+LABEL_DEFAULT_SIZE = '62'
+LABEL_DEFAULT_FONT_FAMILY = 'DejaVu Sans'
+LABEL_DEFAULT_FONT_STYLE = 'Book'
+STUDIO_LABELS_DIR = '/var/lib/label-studio/labels'
+LABEL_REPOSITORY_DIR = '/var/lib/label-studio/classic-labels'
+STUDIO_PRINTER_LOCK = '/var/lib/label-studio/printer.lock'
+SERVER_HOST = '0.0.0.0'
+SERVER_PORT = 80
