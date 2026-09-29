@@ -58,13 +58,8 @@ def init_fonts(app: Flask):
         sys.exit(2)
 
     from app.studio_preferences import font_dir
-    from fontTools.ttLib import TTFont
-    for path in font_dir(app).glob('*/font.ttf'):
-        with TTFont(path) as font:
-            family = font['name'].getDebugName(1)
-            style = font['name'].getDebugName(2)
-        if family and style:
-            FONTS.fonts.setdefault(family, {})[style] = str(path)
+    from app.managed_fonts import load_installed
+    load_installed(FONTS, font_dir(app))
     return FONTS
 
 

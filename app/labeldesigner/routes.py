@@ -561,6 +561,7 @@ def create_label_from_request(d: dict = {}, files: dict = {}, counter: int = 0):
         if int(line['size']) < 1:
             raise ValueError("Font size must be at least 1")
         line['path'] = app_module.FONTS.get_path(line.get('font', ''))
+        line['variations'] = app_module.FONTS.get_variations(line.get('font', ''))
         if len(line.get('text', '')) > 10_000:
             raise ValueError("Text is too long")
 

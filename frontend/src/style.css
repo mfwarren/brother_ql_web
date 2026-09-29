@@ -1349,3 +1349,61 @@ details[open] summary > svg:last-child {
     font-size: 12px;
     overflow-wrap: anywhere;
 }
+
+.rich-editor {
+    display: grid;
+    gap: 6px;
+}
+.rich-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.rich-toolbar select {
+    width: auto;
+    min-height: 30px;
+    padding: 4px;
+    font-size: 12px;
+}
+.rich-toolbar [aria-pressed="true"] {
+    color: var(--accent);
+    background: #e2edfc;
+}
+.rich-text-area {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: white;
+    min-height: 100px;
+    max-height: 280px;
+    overflow: auto;
+    padding: 10px;
+    font-optical-sizing: none;
+}
+.rich-text-area .tiptap {
+    zoom: 0.45;
+    min-height: 175px;
+    outline: none;
+    overflow-wrap: anywhere;
+}
+.rich-text-area .tiptap p {
+    margin: 0;
+    line-height: 1.25;
+}
+.rich-text-area .tiptap strong {
+    font-weight: 700;
+}
+.rich-text-area .tiptap em {
+    font-style: italic;
+}
+.rich-text-area:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px #0969da22;
+}
+.rich-toolbar .icon-button {
+    min-width: 32px;
+    width: 32px;
+    min-height: 36px;
+    padding: 6px;
+    flex-shrink: 0;
+}

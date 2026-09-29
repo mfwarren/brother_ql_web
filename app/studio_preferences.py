@@ -1,6 +1,5 @@
 """Persistent defaults and locally installed fonts for Label Studio."""
 import hashlib
-import io
 import json
 import os
 import tempfile
@@ -10,11 +9,10 @@ from pathlib import Path
 from urllib.parse import quote
 from urllib.request import urlopen
 
-from flask import current_app, request
+from flask import current_app, request, send_file
 from fontTools.ttLib import TTFont
-from fontTools.varLib.instancer import instantiateVariableFont
-from PIL import ImageFont
 
+from app.managed_fonts import inspect_faces, register_faces
 import app as app_module
 from app.studio import bp, InputError, _body, _int, _sizes, _string, _write_record
 
@@ -37,7 +35,7 @@ def font_dir(app):
 def font_list():
     # Publish a new mapping after each installation; readers keep a stable snapshot.
     fonts = app_module.FONTS.fonts
-    return [{'id': f'{family},{style}', 'name': f'{family} {style}'}
+    return [{'id': f'{family},{style}', 'name': f'{family} {style}', **app_module.FONTS.describe(f'{family},{style}')}
             for family in sorted(fonts, key=str.casefold) for style in fonts[family]]
 
 
@@ -52,6 +50,7 @@ def defaults():
     path = data_dir(current_app) / 'settings.json'
     if path.exists():
         value.update(json.loads(path.read_text())['defaults'])
+    value['font'] = app_module.FONTS.canonical_font(value['font'])
     if value['font'] not in {font['id'] for font in font_list()}:
         value['font'] = ','.join(app_module.FONTS.get_default_font())
     return value
@@ -105,50 +104,43 @@ def _download(path):
         raise InputError('Font download failed. Check the Pi internet connection and try again.') from error
 
 
-def _prepare_font(data, *, regular=False):
+def _installed_result(destination):
+    faces = json.loads((destination / 'faces.json').read_text())
+    register_faces(app_module.FONTS, destination, faces)
+    regular = min(faces, key=lambda face: (face['italic'], abs(face['weight'] - 400)))
+    return {'font': f"{regular['family']},{regular['style']}", 'fonts': font_list()}
+
+
+def _install_files(files, directory, *, family_name=None, extra=None):
+    destination = font_dir(current_app) / directory
+    faces = []
     try:
-        font = TTFont(io.BytesIO(data))
-        if font.flavor is not None:
-            raise ValueError('Use TTF or OTF')
-        if regular and 'fvar' in font:
-            axes = {axis.axisTag: min(axis.maxValue, max(axis.minValue, 400 if axis.axisTag == 'wght' else axis.defaultValue))
-                    for axis in font['fvar'].axes}
-            font = instantiateVariableFont(font, axes, inplace=True)
-        family = font['name'].getDebugName(1)
-        style = font['name'].getDebugName(2)
-        if not family or not style or ',' in family or len(f'{family},{style}') > 200:
-            raise ValueError('Invalid font names')
-        output = io.BytesIO()
-        font.save(output)
-        font.close()
-        data = output.getvalue()
-        ImageFont.truetype(io.BytesIO(data), 30).getmask('Label 123')
-        return family, style, data
+        for filename, data in files.items():
+            faces.extend(inspect_faces(data, filename, family_name))
     except Exception as error:
         raise InputError('This font cannot be used. Choose a valid TTF or OTF font with printable outlines.') from error
-
-
-def _publish_font(family, style, path):
-    fonts = {name: dict(styles) for name, styles in app_module.FONTS.fonts.items()}
-    fonts.setdefault(family, {})[style] = str(path)
-    app_module.FONTS.fonts = fonts
-
-
-def _install(data, directory, *, regular=False, extra=None):
-    family, style, prepared = _prepare_font(data, regular=regular)
-    parent = font_dir(current_app)
-    parent.mkdir(parents=True, exist_ok=True)
-    destination = parent / directory
     with _font_lock:
-        if not destination.exists():
-            with tempfile.TemporaryDirectory(dir=parent, prefix='.install-') as tmp:
-                stage = Path(tmp)
-                (stage / 'font.ttf').write_bytes(prepared)
-                for name, contents in (extra or {}).items():
-                    (stage / name).write_bytes(contents)
-                os.rename(stage, destination)
-        _publish_font(family, style, destination / 'font.ttf')
-    return {'font': f'{family},{style}', 'fonts': font_list()}
+        destination.mkdir(parents=True, exist_ok=True)
+        old_font = destination / 'font.ttf'
+        if family_name and old_font.exists():
+            with TTFont(old_font) as old:
+                old_name = f"{old['name'].getDebugName(1)},{old['name'].getDebugName(2)}"
+            regular = min(faces, key=lambda face: (face['italic'], abs(face['weight']-400)))
+            new_name = f"{regular['family']},{regular['style']}"
+            if old_name != new_name:
+                _write_record(destination / 'aliases.json', {old_name: new_name})
+        # Data files precede the manifest; each original font stays unchanged.
+        for filename, data in {**files, **(extra or {})}.items():
+            fd, temporary = tempfile.mkstemp(dir=destination, prefix='.font-')
+            try:
+                with os.fdopen(fd, 'wb') as stream:
+                    stream.write(data)
+                os.replace(temporary, destination / filename)
+            finally:
+                if os.path.exists(temporary):
+                    os.unlink(temporary)
+        _write_record(destination / 'faces.json', faces)
+        return _installed_result(destination)
 
 
 @bp.route('/api/fonts/install', methods=['POST'])
@@ -157,12 +149,35 @@ def install_google_font():
     family = next((f for f in catalog()['families'] if f['id'] == family_id), None)
     if family is None:
         raise InputError('Choose a font from the catalog.')
-    files = [name for name in family['files'] if name.endswith('.ttf')]
-    files.sort(key=lambda name: ('Italic' in name, 'Regular' not in name, '[' not in name, name))
-    selected = files[0]
+    directory = 'google-' + family_id.replace('/', '-')
+    destination = font_dir(current_app) / directory
+    if (destination / 'faces.json').exists():
+        with _font_lock:
+            return _installed_result(destination)
+    names = [name for name in family['files'] if name.endswith('.ttf')]
+    variable = [name for name in names if '[' in name]
+    if variable:
+        selected = variable
+    else:
+        selected = [name for name in names if any(name.endswith('-' + style + '.ttf') for style in ('Regular', 'Bold', 'Italic', 'BoldItalic'))]
+        selected = selected or names[:1]
     extra = {name: _download(family_id + '/' + name) for name in family['files'] if name.endswith('.txt')}
-    extra['source.json'] = json.dumps({'family': family['name'], 'revision': catalog()['revision'], 'file': selected}).encode()
-    return _install(_download(family_id + '/' + selected), 'google-' + family_id.replace('/', '-'), regular=True, extra=extra)
+    extra['source.json'] = json.dumps({'family': family['name'], 'revision': catalog()['revision'], 'files': selected, 'nativeVariations': True}).encode()
+    files = {}
+    for name in selected:
+        data = _download(family_id + '/' + name)
+        files[hashlib.sha256(data).hexdigest() + '.ttf'] = data
+    return _install_files(files, directory, family_name=family['name'], extra=extra)
+
+
+@bp.route('/api/fonts/file')
+def font_file():
+    name = request.args.get('font', '')
+    try:
+        path = app_module.FONTS.get_path(name)
+    except (ValueError, LookupError):
+        raise InputError('Choose an installed font.')
+    return send_file(path, mimetype='font/ttf', conditional=True)
 
 
 @bp.route('/api/fonts/upload', methods=['POST'])
@@ -174,4 +189,4 @@ def upload_font():
     data = upload.read(FONT_LIMIT + 1)
     if not data or len(data) > FONT_LIMIT:
         raise InputError('Font must be no larger than 8 MB.')
-    return _install(data, 'upload-' + hashlib.sha256(data).hexdigest())
+    return _install_files({'font.ttf': data}, 'upload-' + hashlib.sha256(data).hexdigest())

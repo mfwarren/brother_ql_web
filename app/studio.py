@@ -81,7 +81,8 @@ def _validate_draft(draft):
     orientation = draft.get('orientation')
     if orientation not in ('standard', 'rotated'):
         raise InputError('Invalid orientation.')
-    font = _string(draft.get('font'), 'font', 200)
+    font = app_module.FONTS.canonical_font(_string(draft.get('font'), 'font', 200))
+    draft = {**draft, 'font': font}
     if font not in {f"{family},{style}" for family, styles in app_module.FONTS.fonts.items() for style in styles}:
         raise InputError('Unknown font.')
     size_px = _int(draft.get('fontSize'), 'Font size', 8, 200)
@@ -104,6 +105,12 @@ def _validate_draft(draft):
     image_bytes = None
     if kind == 'text':
         _string(content.get('text'), 'text', 10000)
+        if 'paragraphs' in content:
+            from app.rich_text import validate_paragraphs
+            try:
+                validate_paragraphs(content['paragraphs'], content['text'])
+            except ValueError as error:
+                raise InputError(str(error))
     elif kind == 'qr':
         _string(content.get('code'), 'QR code', 2000)
         _string(content.get('caption'), 'caption', 10000, allow_empty=True)
@@ -164,6 +171,9 @@ def _to_upstream(draft, image_bytes):
 
 
 def _render(draft, image_bytes):
+    if draft['content']['kind'] == 'text' and 'paragraphs' in draft['content']:
+        from app.rich_text import render_label
+        return render_label(draft)
     from app.labeldesigner.routes import create_label_from_request
     values, files = _to_upstream(draft, image_bytes)
     return create_label_from_request(values, files)
@@ -176,7 +186,9 @@ def _repo_dir():
 
 
 def _saved(record):
-    return {key: record[key] for key in ('id', 'name', 'updatedAt', 'draft')}
+    saved = {key: record[key] for key in ('id', 'name', 'updatedAt', 'draft')}
+    saved['draft'] = {**record['draft'], 'font': app_module.FONTS.canonical_font(record['draft']['font'])}
+    return saved
 
 
 def _record_path(label_id):

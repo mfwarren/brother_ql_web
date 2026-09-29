@@ -5,9 +5,23 @@ const imageSchema = z.object({
     mime: z.string(),
     base64: z.string(),
 });
+export const textRunSchema = z.object({
+    text: z.string(),
+    size: z.number().int().min(8).max(200).optional(),
+    bold: z.boolean().optional(),
+    italic: z.boolean().optional(),
+});
+export const paragraphsSchema = z.array(
+    z.object({ runs: z.array(textRunSchema) }),
+);
+export type Paragraphs = z.infer<typeof paragraphsSchema>;
 export const draftSchema = z.object({
     content: z.discriminatedUnion("kind", [
-        z.object({ kind: z.literal("text"), text: z.string() }),
+        z.object({
+            kind: z.literal("text"),
+            text: z.string(),
+            paragraphs: paragraphsSchema.optional(),
+        }),
         z.object({
             kind: z.literal("qr"),
             code: z.string(),
@@ -42,7 +56,14 @@ export const defaultsSchema = draftSchema
     })
     .extend({ autoDetectRoll: z.boolean().default(true) });
 export type Defaults = z.infer<typeof defaultsSchema>;
-const fontsSchema = z.array(z.object({ id: z.string(), name: z.string() }));
+const fontsSchema = z.array(
+    z.object({
+        id: z.string(),
+        name: z.string(),
+        weight: z.number().default(400),
+        italic: z.boolean().default(false),
+    }),
+);
 const catalogSchema = z.array(
     z.object({ id: z.string(), name: z.string(), installed: z.boolean() }),
 );

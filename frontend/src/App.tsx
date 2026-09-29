@@ -40,6 +40,7 @@ import {
 import LibraryView from "./LibraryView";
 import PrinterView from "./PrinterView";
 import SettingsView from "./SettingsView";
+import RichTextEditor from "./RichTextEditor";
 
 type Page = "editor" | "library" | "printer" | "settings";
 type Preview =
@@ -672,27 +673,13 @@ export default function App() {
                                             <div className="form-body">
                                                 {draft.content.kind ===
                                                     "text" && (
-                                                    <label className="field">
-                                                        Label text
-                                                        <textarea
-                                                            aria-label="Label text"
-                                                            value={
-                                                                draft.content
-                                                                    .text
-                                                            }
-                                                            placeholder="Enter label text"
-                                                            maxLength={2000}
-                                                            onChange={(event) =>
-                                                                content({
-                                                                    kind: "text",
-                                                                    text: event
-                                                                        .target
-                                                                        .value,
-                                                                })
-                                                            }
-                                                            rows={3}
-                                                        />
-                                                    </label>
+                                                    <RichTextEditor
+                                                        value={draft.content}
+                                                        onChange={content}
+                                                        font={draft.font}
+                                                        size={draft.fontSize}
+                                                        fonts={config.fonts}
+                                                    />
                                                 )}
                                                 {draft.content.kind ===
                                                     "qr" && (
@@ -960,7 +947,10 @@ export default function App() {
                                                         </select>
                                                     </label>
                                                     <label className="field">
-                                                        Size{" "}
+                                                        {draft.content.kind ===
+                                                        "text"
+                                                            ? "Default size"
+                                                            : "Size"}{" "}
                                                         <span className="optional">
                                                             px
                                                         </span>

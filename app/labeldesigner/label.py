@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 WARNING_TEXT_LENGTH = 500
 DEFAULT_RANDOM_LENGTH = 64
 DEFAULT_FONT_SIZE = 12
-FONT_CACHE: Dict[Tuple[str, int], ImageFont.FreeTypeFont] = {}
+FONT_CACHE: Dict[Tuple[str, int, tuple], ImageFont.FreeTypeFont] = {}
 
 
 class SimpleLabel:
@@ -461,7 +461,7 @@ class SimpleLabel:
             spacing = int(int(line['size'])*((int(line['line_spacing']) - 100) / 100)) if 'line_spacing' in line else 0
 
             # Get font
-            font = self._get_font(line['path'], line['size'])
+            font = self._get_font(line['path'], line['size'], line.get('variations', ()))
 
             # Determine anchors
             anchor = None
@@ -577,13 +577,15 @@ class SimpleLabel:
         max_width = max(bbox[0][2] for bbox in bboxes)
         return (bboxes[0][0][0], bboxes[0][0][1], max_width, bboxes[-1][0][3])
 
-    def _get_font(self, font_path: str, size: int) -> ImageFont.FreeTypeFont:
+    def _get_font(self, font_path: str, size: int, variations=()) -> ImageFont.FreeTypeFont:
         """Get a font object, using cache for performance."""
-        key = (font_path, size)
+        key = (font_path, size, tuple(variations))
         if key in FONT_CACHE:
             return FONT_CACHE[key]
         try:
             font = ImageFont.truetype(font_path, int(size))
+            if variations:
+                font.set_variation_by_axes(list(variations))
             FONT_CACHE[key] = font
             return font
         except Exception as e:

@@ -75,7 +75,7 @@ export default function SettingsView({ config, status, onConfig }: Props) {
                     ),
                 );
             setMessage(
-                "Font installed locally and selected. Save defaults to use it for new labels.",
+                "Font family installed locally. Regular is selected; other styles are available in Typeface. Save defaults to use it for new labels.",
             );
         } catch (e) {
             setError(errorMessage(e));
@@ -300,9 +300,9 @@ export default function SettingsView({ config, status, onConfig }: Props) {
                     </label>
                 </div>
                 <p className="small muted">
-                    Search Google Fonts, then install a family’s regular face.
-                    Fonts stay on this printer server for offline use. You can
-                    also upload a TTF or OTF, up to 8 MB.
+                    Search Google Fonts, then install its available weights and
+                    italics. Fonts stay on this printer server for offline use.
+                    You can also upload a TTF or OTF, up to 8 MB.
                 </p>
                 <label className="search-field">
                     <Search size={16} />

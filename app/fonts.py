@@ -10,6 +10,9 @@ class Fonts:
                  default_family: str = 'DejaVu Serif',
                  default_style: str = 'Book',
                  additional_path: str = ''):
+        self.aliases = {}
+        self.variations = {}
+        self.face_metadata = {}
         self.fonts = defaultdict(dict)
         self.default_family = default_family
         self.default_style = default_style
@@ -104,9 +107,41 @@ class Fonts:
         return bool(self.fonts)
 
     def get_path(self, font: str):
+        font = self.canonical_font(font)
         family_name, style_name = font.split(",", 1)
         if family_name not in self.fonts:
             raise LookupError(f"Unknown font family: {family_name}")
         if style_name not in self.fonts[family_name]:
             raise LookupError(f"Unknown font style: {style_name} for font {family_name}")
         return self.fonts[family_name][style_name]
+
+    def canonical_font(self, font):
+        return self.aliases.get(font, font)
+
+    def get_variations(self, font):
+        return self.variations.get(self.canonical_font(font), ())
+
+    def describe(self, font):
+        font = self.canonical_font(font)
+        if font in self.face_metadata:
+            return self.face_metadata[font]
+        style = font.split(',', 1)[1].lower()
+        return {'weight': 700 if 'bold' in style else 400,
+                'italic': 'italic' in style or 'oblique' in style}
+
+    def styled_face(self, font, bold=False, italic=False):
+        font = self.canonical_font(font)
+        if not bold and not italic:
+            return font
+        family, _ = font.split(',', 1)
+        base = self.describe(font)
+        weight = 700 if bold else base['weight']
+        slanted = italic or base['italic']
+        candidates = [f'{family},{style}' for style in self.fonts[family]]
+        candidates = [key for key in candidates if self.describe(key)['italic'] == slanted]
+        if not candidates:
+            raise ValueError(f'{family} has no italic face installed.')
+        selected = min(candidates, key=lambda key: abs(self.describe(key)['weight'] - weight))
+        if bold and self.describe(selected)['weight'] < 600:
+            raise ValueError(f'{family} has no bold face installed.')
+        return selected
