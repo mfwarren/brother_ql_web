@@ -166,7 +166,7 @@ export default function SettingsView({ config, status, onConfig }: Props) {
                             </select>
                         </label>
                         <label className="field">
-                            Default label roll
+                            Fallback label roll
                             <select
                                 value={values.sizeId}
                                 onChange={(e) =>
@@ -179,6 +179,18 @@ export default function SettingsView({ config, status, onConfig }: Props) {
                                     </option>
                                 ))}
                             </select>
+                        </label>
+                        <label className="check-field">
+                            <input
+                                type="checkbox"
+                                checked={values.autoDetectRoll}
+                                onChange={(event) =>
+                                    update({
+                                        autoDetectRoll: event.target.checked,
+                                    })
+                                }
+                            />
+                            Follow loaded roll for new labels
                         </label>
                         <div className="detected-roll">
                             <span>
@@ -196,9 +208,8 @@ export default function SettingsView({ config, status, onConfig }: Props) {
                         </div>
                         {matches.length > 1 && (
                             <p className="small muted">
-                                The printer reports the roll dimensions. Select
-                                the matching roll type above, including
-                                black/red if fitted.
+                                Color not confirmed. Choose black or black/red
+                                in the editor.
                             </p>
                         )}
                         <button className="button primary" type="submit">
@@ -208,9 +219,9 @@ export default function SettingsView({ config, status, onConfig }: Props) {
                     </fieldset>
                 </form>
                 <p className="small muted">
-                    Saved labels keep their own layout. Margins and orientation
-                    are set by the app; the printer checks the roll dimensions
-                    before printing.
+                    Detected rolls update new labels automatically. Saved labels
+                    and manual roll choices stay fixed. The fallback is used
+                    when detection is unavailable.
                 </p>
                 {message && (
                     <p className="settings-message" role="status">

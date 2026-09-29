@@ -32,13 +32,15 @@ export const draftSchema = z.object({
 });
 export type Draft = z.infer<typeof draftSchema>;
 export type Content = Draft["content"];
-export const defaultsSchema = draftSchema.pick({
-    font: true,
-    sizeId: true,
-    orientation: true,
-    margin: true,
-    fontSize: true,
-});
+export const defaultsSchema = draftSchema
+    .pick({
+        font: true,
+        sizeId: true,
+        orientation: true,
+        margin: true,
+        fontSize: true,
+    })
+    .extend({ autoDetectRoll: z.boolean().default(true) });
 export type Defaults = z.infer<typeof defaultsSchema>;
 const fontsSchema = z.array(z.object({ id: z.string(), name: z.string() }));
 const catalogSchema = z.array(
@@ -68,7 +70,7 @@ const statusSchema = z.object({
     message: z.string(),
     media: z.string().nullable(),
     matchingSizes: z.array(z.string()).default([]),
-    mediaColor: z.enum(["black-red", "unknown"]).default("unknown"),
+    mediaColor: z.enum(["black", "black-red", "unknown"]).default("unknown"),
 });
 export type PrinterStatus = z.infer<typeof statusSchema>;
 const savedSchema = z.object({
@@ -176,7 +178,11 @@ export const api = {
 export function starter(config: Config): Draft {
     return {
         content: { kind: "text", text: "Coffee beans" },
-        ...config.defaults,
+        sizeId: config.defaults.sizeId,
+        font: config.defaults.font,
+        fontSize: config.defaults.fontSize,
+        orientation: config.defaults.orientation,
+        margin: config.defaults.margin,
         align: "center",
         color: "black",
         highRes: false,

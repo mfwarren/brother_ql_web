@@ -239,10 +239,11 @@ def _status_from_raw(raw, model, expected_size=None):
     media_type = raw.get('media_type')
     media_width = raw.get('media_width')
     media_length = raw.get('media_length')
-    media = f'{media_width} mm {media_type}' if media_width and media_type else None
+    dimensions = f'{media_width} × {media_length}' if media_length else str(media_width)
+    media = f'{dimensions} mm {media_type}' if media_width and media_type else None
     color = raw.get('media_color', 'unknown')
-    if color == 'black-red' and media:
-        media += ' (black/red)'
+    if color in ('black', 'black-red') and media:
+        media += ' (black/red)' if color == 'black-red' else ' (black only)'
     if errors:
         return {'state': 'error', 'model': reported_model, 'message': ', '.join(map(str, errors)), 'media': media}
     if raw.get('phase_type') == 'Printing state':
@@ -257,12 +258,16 @@ def _status_from_raw(raw, model, expected_size=None):
         label = next(item for item in _sizes() if item.identifier == expected_size)
         if color == 'black-red' and expected_size != '62red':
             return {'state': 'error', 'model': reported_model, 'message': 'Black/red tape is loaded. Choose 62 mm black/red for this label.', 'media': media}
+        if color == 'black' and expected_size == '62red':
+            return {'state': 'error', 'model': reported_model, 'message': 'Black-only tape is loaded. Choose a black-only label roll.', 'media': media}
         expected_width, expected_length = label.tape_size
         if (media_width, media_length) != (expected_width, expected_length):
             return {'state': 'error', 'model': reported_model, 'message': 'Loaded roll does not match label size', 'media': media}
     matching = [label.identifier for label in _sizes() if tuple(label.tape_size) == (media_width, media_length)]
     if color == 'black-red':
         matching = [size for size in matching if size == '62red']
+    elif color == 'black':
+        matching = [size for size in matching if size != '62red']
     return {'state': 'ready', 'model': reported_model, 'message': 'Printer ready', 'media': media, 'matchingSizes': matching, 'mediaColor': color}
 
 

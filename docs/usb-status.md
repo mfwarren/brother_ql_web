@@ -22,11 +22,24 @@ marks status bytes 24–31 reserved. The independent
 [thermal-label QL protocol implementation](https://thermal-label.github.io/brother-ql/protocol/ql)
 reports bit 7 of byte 25 as the two-color-roll flag on QL-800/810W/820NWB.
 
-The decoder now exposes this positive flag as `media_color=black-red`. This makes
-the UI identify `62red`, offers the exact detected roll in Settings, rejects a
-black-only job configuration for detected red stock, and removes the manual
-red-media confirmation when detected. A clear flag remains **unknown**, not an
-assertion that monochrome stock is loaded. The captured printer response above
-has byte 25 = 01, so it does not positively report red stock. A controlled capture
-with a known black/red roll is still needed to verify the flag on this printer's
-firmware. Unknown stock retains the manual confirmation.
+The decoder recognizes the positive two-color flag as `media_color=black-red`.
+A controlled QL-800 roll swap also verified `0x01` as black-only and `0x81` as
+black/red. Only the QL-800 uses this verified black-only value; other models and
+unrecognized values remain unknown. Unknown stock retains manual confirmation.
+The app rejects a job whose selected color mode conflicts with detected stock.
+
+## Roll-change verification
+
+Read-only USB captures with the owner identifying each loaded roll:
+
+| Roll | Status frame (hex) | Dimensions |
+| --- | --- | --- |
+| 29 × 90 mm die-cut | `802042343830000000001d0b00000100005a0000000000000001000000000000` | 29 × 90 mm |
+| 62 mm black-only continuous | `802042343830000000003e0a0000150000000000000000000001000000000000` | 62 mm, continuous |
+| 62 mm black/red continuous | `802042343830000000003e0a0000230000000000000000000081000000000000` | 62 mm, continuous |
+
+New labels follow a uniquely detected roll when `autoDetectRoll` is enabled in
+shared settings. The UI checks every five seconds without overlapping requests.
+Saved labels and explicit manual roll choices retain their size. Detection does
+not overwrite saved records or the fallback size. The loaded dimensions include
+the length for die-cut stock; continuous stock has no fixed length.

@@ -103,8 +103,12 @@ Explicit addition restores missing sample IDs but preserves existing samples, in
 Open **Settings** to set the default typeface, text size, orientation, roll, and margin.
 The settings apply to new labels; existing saved documents retain their formatting.
 New-label actions fetch the current settings so other devices pick up changes too.
-The printer status supplies roll dimensions. Where several rolls share dimensions
-(such as 62 mm black-only and black/red without a positive color flag), choose the exact stock manually. See [USB status details](docs/usb-status.md).
+The printer reports roll width and die-cut length. On the QL-800, black-only and
+black/red detection was verified using physical roll swaps. New labels follow a
+uniquely detected roll by default, with a five-second status refresh. Turn off
+**Follow loaded roll for new labels** to use a fixed default. Saved labels and
+manual choices retain their own settings; mismatched stock is rejected before
+printing. See [USB status evidence](docs/usb-status.md).
 
 Settings live in `settings.json` and downloaded/uploaded fonts in `fonts/`, next to
 `STUDIO_LABELS_DIR`, or under `STUDIO_DATA_DIR` if set. With the included Pi deployment,

@@ -12,9 +12,13 @@ def decode_status(packet):
     state = interpret_response(packet)
     state['raw_status'] = bytes(packet).hex()
     state['media_color_code'] = packet[25]
-    # Field-observed QL two-colour flag; older firmware can leave it unset.
-    state['media_color'] = ('black-red' if state['model'] in ('QL-800', 'QL-810W', 'QL-820NWB')
-                            and packet[25] & 0x80 else 'unknown')
+    # QL-800 values verified by swapping known black-only and black/red rolls.
+    if state['model'] in ('QL-800', 'QL-810W', 'QL-820NWB') and packet[25] & 0x80:
+        state['media_color'] = 'black-red'
+    elif state['model'] == 'QL-800' and packet[25] == 0x01:
+        state['media_color'] = 'black'
+    else:
+        state['media_color'] = 'unknown'
     return state
 
 

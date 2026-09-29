@@ -61,6 +61,7 @@ export default function App() {
     const [layoutOpen, setLayoutOpen] = useState(window.innerWidth >= 1100);
     const [page, setPage] = useState<Page>("editor");
     const [labels, setLabels] = useState<SavedLabel[]>([]);
+    const [followLoadedRoll, setFollowLoadedRoll] = useState(true);
     const [activeId, setActiveId] = useState<string | null>(null);
     const [name, setName] = useState("");
     const [search, setSearch] = useState("");
@@ -99,8 +100,11 @@ export default function App() {
             .catch((error) => {
                 if (alive) setStartupError(errorMessage(error));
             });
-        const refresh = () =>
-            api
+        let refreshing = false;
+        const refresh = () => {
+            if (refreshing) return;
+            refreshing = true;
+            return api
                 .status()
                 .then((value) => {
                     if (alive) setStatus(value);
@@ -115,14 +119,46 @@ export default function App() {
                             mediaColor: "unknown",
                             message: errorMessage(error),
                         });
+                })
+                .finally(() => {
+                    refreshing = false;
                 });
+        };
         void refresh();
-        const timer = window.setInterval(refresh, 15000);
+        const timer = window.setInterval(refresh, 5000);
         return () => {
             alive = false;
             window.clearInterval(timer);
         };
     }, []);
+
+    const detectedRoll =
+        status?.state === "ready" && status.matchingSizes.length === 1
+            ? status.matchingSizes[0]
+            : undefined;
+    useEffect(() => {
+        if (
+            !detectedRoll ||
+            !config?.defaults.autoDetectRoll ||
+            !followLoadedRoll ||
+            activeId
+        )
+            return;
+        setDraft((current) =>
+            current && current.sizeId !== detectedRoll
+                ? {
+                      ...current,
+                      sizeId: detectedRoll,
+                      highRes: false,
+                      color: "black",
+                      content:
+                          current.content.kind === "image"
+                              ? { ...current.content, mode: "grayscale" }
+                              : current.content,
+                  }
+                : current,
+        );
+    }, [detectedRoll, config, followLoadedRoll, activeId, draft?.sizeId]);
 
     useEffect(() => {
         if (!draft) return;
@@ -182,6 +218,7 @@ export default function App() {
     }, []);
 
     function update(values: Partial<Draft>) {
+        if (values.sizeId !== undefined) setFollowLoadedRoll(false);
         setDraft((current) => (current ? { ...current, ...values } : current));
     }
     function content(next: Content) {
@@ -215,6 +252,7 @@ export default function App() {
             setConfig(latest);
             contentDrafts.current.clear();
             setDraft(starter(latest));
+            setFollowLoadedRoll(true);
             setActiveId(null);
             setName("");
             setPage("editor");
@@ -226,6 +264,7 @@ export default function App() {
     function open(label: SavedLabel) {
         contentDrafts.current.clear();
         setDraft(label.draft);
+        setFollowLoadedRoll(false);
         setActiveId(label.id);
         setName(label.name);
         setPage("editor");
@@ -1053,6 +1092,40 @@ export default function App() {
                                                         )}
                                                     </select>
                                                 </label>
+                                                <div className="detected-roll">
+                                                    <span>
+                                                        {status?.media
+                                                            ? `Loaded: ${status.media}`
+                                                            : "Roll not detected"}
+                                                    </span>
+                                                    {detectedRoll &&
+                                                        detectedRoll !==
+                                                            draft.sizeId && (
+                                                            <button
+                                                                className="button subtle"
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    update({
+                                                                        sizeId: detectedRoll,
+                                                                        highRes: false,
+                                                                        color: "black",
+                                                                        content:
+                                                                            draft
+                                                                                .content
+                                                                                .kind ===
+                                                                            "image"
+                                                                                ? {
+                                                                                      ...draft.content,
+                                                                                      mode: "grayscale",
+                                                                                  }
+                                                                                : draft.content,
+                                                                    })
+                                                                }
+                                                            >
+                                                                Use loaded roll
+                                                            </button>
+                                                        )}
+                                                </div>
                                                 <div className="two-fields">
                                                     <label className="field">
                                                         Orientation

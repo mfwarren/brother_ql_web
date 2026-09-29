@@ -28,8 +28,9 @@ The additional examples take inspiration from the common uses on [Brother’s QL
 
 The compact **Fragile · Black/red tape** sample has an original broken-glass icon
 and red lettering. Its roll, orientation, margins, and resolution are saved with
-the label. The driver recognizes the two-color flag when the printer reports it. Otherwise,
-printing asks you to confirm black/red tape is loaded. See [USB status details](docs/usb-status.md).
+the label. The QL-800 detects black-only and black/red rolls over USB. New labels follow
+the detected roll automatically; saved labels retain their paper settings. If
+the printer cannot identify the color, printing asks you to confirm black/red tape. See [USB status details](docs/usb-status.md).
 The image is horizontal across the roll, with roughly 23 mm of rendered content
 along the feed direction, plus the printer's feed/cut allowance.
 

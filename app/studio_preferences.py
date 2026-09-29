@@ -45,6 +45,7 @@ def defaults():
     config = current_app.config
     value = {'font': ','.join(app_module.FONTS.get_default_font()),
              'sizeId': config['LABEL_DEFAULT_SIZE'],
+             'autoDetectRoll': True,
              'orientation': config['LABEL_DEFAULT_ORIENTATION'],
              'margin': config['LABEL_DEFAULT_MARGIN_TOP'],
              'fontSize': config['LABEL_DEFAULT_FONT_SIZE']}
@@ -68,6 +69,9 @@ def save_defaults():
     if value.get('orientation') not in ('standard', 'rotated'):
         raise InputError('Choose a valid orientation.')
     clean = {key: value[key] for key in ('font', 'sizeId', 'orientation')}
+    if not isinstance(value.get('autoDetectRoll', True), bool):
+        raise InputError('Automatic roll detection must be on or off.')
+    clean['autoDetectRoll'] = value.get('autoDetectRoll', True)
     clean['margin'] = _int(value.get('margin'), 'Margin', 0, 100)
     clean['fontSize'] = _int(value.get('fontSize'), 'Font size', 8, 200)
     directory = data_dir(current_app)
