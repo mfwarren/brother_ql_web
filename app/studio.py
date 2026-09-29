@@ -255,7 +255,8 @@ def _status_from_raw(raw, model, expected_size=None):
         expected_width, expected_length = label.tape_size
         if (media_width, media_length) != (expected_width, expected_length):
             return {'state': 'error', 'model': reported_model, 'message': 'Loaded roll does not match label size', 'media': media}
-    return {'state': 'ready', 'model': reported_model, 'message': 'Printer ready', 'media': media}
+    matching = [label.identifier for label in _sizes() if tuple(label.tape_size) == (media_width, media_length)]
+    return {'state': 'ready', 'model': reported_model, 'message': 'Printer ready', 'media': media, 'matchingSizes': matching}
 
 
 def _status_locked(device, expected_size=None):
@@ -286,12 +287,12 @@ def assets(asset):
 
 @bp.route('/api/config')
 def config():
-    family, style = app_module.FONTS.get_default_font()
-    fonts = [{'id': f'{family},{style}', 'name': f'{family} {style}'}
-             for family, variants in app_module.FONTS.fonts.items() for style in variants]
-    return {'model': current_app.config['PRINTER_MODEL'], 'fonts': fonts,
+    from app.studio_preferences import defaults, font_list
+    preferences = defaults()
+    return {'model': current_app.config['PRINTER_MODEL'], 'fonts': font_list(),
             'sizes': [{'id': label.identifier, 'name': label.name} for label in _sizes()],
-            'defaultFont': f'{family},{style}', 'defaultSize': current_app.config['LABEL_DEFAULT_SIZE'],
+            'defaultFont': preferences['font'], 'defaultSize': preferences['sizeId'],
+            'defaults': preferences,
             'mode': 'simulation' if _device() == 'simulation' else 'physical'}
 
 

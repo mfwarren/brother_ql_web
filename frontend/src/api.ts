@@ -32,9 +32,23 @@ export const draftSchema = z.object({
 });
 export type Draft = z.infer<typeof draftSchema>;
 export type Content = Draft["content"];
+export const defaultsSchema = draftSchema.pick({
+    font: true,
+    sizeId: true,
+    orientation: true,
+    margin: true,
+    fontSize: true,
+});
+export type Defaults = z.infer<typeof defaultsSchema>;
+const fontsSchema = z.array(z.object({ id: z.string(), name: z.string() }));
+const catalogSchema = z.array(
+    z.object({ id: z.string(), name: z.string(), installed: z.boolean() }),
+);
+export type FontFamily = z.infer<typeof catalogSchema>[number];
 const configSchema = z.object({
     model: z.string(),
-    fonts: z.array(z.object({ id: z.string(), name: z.string() })),
+    fonts: fontsSchema,
+    defaults: defaultsSchema,
     sizes: z.array(z.object({ id: z.string(), name: z.string() })),
     defaultFont: z.string(),
     defaultSize: z.string(),
@@ -53,6 +67,7 @@ const statusSchema = z.object({
     model: z.string(),
     message: z.string(),
     media: z.string().nullable(),
+    matchingSizes: z.array(z.string()).default([]),
 });
 export type PrinterStatus = z.infer<typeof statusSchema>;
 const savedSchema = z.object({
@@ -90,6 +105,34 @@ function json(method: string, body: unknown): RequestInit {
     };
 }
 export const api = {
+    settings: async (value: Defaults) =>
+        defaultsSchema.parse(
+            (await (await response("/settings", json("PUT", value))).json())
+                .defaults,
+        ),
+    fontCatalog: async () =>
+        catalogSchema.parse(
+            (await (await response("/fonts/catalog")).json()).families,
+        ),
+    installFont: async (id: string) =>
+        z
+            .object({ font: z.string(), fonts: fontsSchema })
+            .parse(
+                await (
+                    await response("/fonts/install", json("POST", { id }))
+                ).json(),
+            ),
+    uploadFont: async (file: File) => {
+        const body = new FormData();
+        body.append("font", file);
+        return z
+            .object({ font: z.string(), fonts: fontsSchema })
+            .parse(
+                await (
+                    await response("/fonts/upload", { method: "POST", body })
+                ).json(),
+            );
+    },
     config: async () =>
         configSchema.parse(await (await response("/config")).json()),
     status: async () =>
@@ -124,13 +167,9 @@ export const api = {
 export function starter(config: Config): Draft {
     return {
         content: { kind: "text", text: "Coffee beans" },
-        sizeId: config.defaultSize,
-        orientation: "standard",
-        font: config.defaultFont,
-        fontSize: 70,
+        ...config.defaults,
         align: "center",
         color: "black",
-        margin: 24,
         highRes: false,
     };
 }
@@ -138,4 +177,37 @@ export function errorMessage(error: unknown) {
     return error instanceof Error
         ? error.message
         : "Something went wrong. Please try again.";
+}
+
+export function labelTitle(content: Content): string {
+    let title = "";
+    if (content.kind === "text")
+        title = content.text.trim().split(/\r?\n/)[0] ?? "";
+    if (content.kind === "qr") {
+        title = content.caption.trim() || content.code.trim();
+        if (!content.caption.trim()) {
+            try {
+                const url = new URL(title);
+                if (url.protocol === "http:" || url.protocol === "https:")
+                    title =
+                        url.hostname.replace(/^www\./, "") +
+                        (url.pathname === "/" ? "" : url.pathname);
+            } catch {
+                /* Plain-text QR content is already a useful title. */
+            }
+        }
+    }
+    if (content.kind === "image")
+        title =
+            content.caption.trim() ||
+            content.image?.name.replace(/\.[^.]+$/, "") ||
+            "";
+    return (
+        title.replace(/\s+/g, " ").slice(0, 80) ||
+        (content.kind === "qr"
+            ? "QR label"
+            : content.kind === "image"
+              ? "Image label"
+              : "Text label")
+    );
 }

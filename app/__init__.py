@@ -38,6 +38,7 @@ def create_app(config_class=Config) -> Flask:
     from app.labeldesigner import bp as labeldesigner_bp
     app.register_blueprint(labeldesigner_bp, url_prefix='/labeldesigner')
 
+    from app import studio_preferences
     from app.studio import bp as studio_bp
     app.register_blueprint(studio_bp, url_prefix='/studio')
 
@@ -56,6 +57,14 @@ def init_fonts(app: Flask):
         app.logger.error("No fonts found on your system. Please install some.")
         sys.exit(2)
 
+    from app.studio_preferences import font_dir
+    from fontTools.ttLib import TTFont
+    for path in font_dir(app).glob('*/font.ttf'):
+        with TTFont(path) as font:
+            family = font['name'].getDebugName(1)
+            style = font['name'].getDebugName(2)
+        if family and style:
+            FONTS.fonts.setdefault(family, {})[style] = str(path)
     return FONTS
 
 

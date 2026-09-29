@@ -62,32 +62,22 @@ export default function PrinterView({
                         </span>
                         <h2>Keep it ready to print</h2>
                         <p>
-                            The QL-800 can switch itself off after being idle.
-                            Brother’s documented fix is to disable Auto Power
-                            Off.
+                            The QL-800 can power off while idle. The project's
+                            Linux utility can read and disable Auto Power Off
+                            over USB.
                         </p>
-                        <ol>
-                            <li>
-                                Connect the printer to a Mac or Windows computer
-                                by USB.
-                            </li>
-                            <li>Open Brother’s Printer Setting Tool.</li>
-                            <li>
-                                Set <strong>Auto Power Off (AC/DC)</strong> to{" "}
-                                <strong>None</strong> and apply.
-                            </li>
-                            <li>Reconnect it to the Pi.</li>
-                        </ol>
                         <a
-                            href="https://support.brother.com/g/b/faqend.aspx?c=us_ot&faqid=faqp00001613_001&lang=en&prod=lpql800eus"
+                            href="https://github.com/mfwarren/brother_ql_web/blob/modern-interface/docs/linux-power-settings.md"
                             target="_blank"
                             rel="noreferrer"
                         >
-                            Brother’s instructions <ArrowUpRight size={15} />
+                            Power setting instructions{" "}
+                            <ArrowUpRight size={15} />
                         </a>
                         <p className="small muted">
-                            This app cannot wake a printer that has powered off,
-                            or confirm its power-off setting.
+                            A printer that has powered off still needs its
+                            physical power button. This page does not read the
+                            auto-off setting.
                         </p>
                     </section>
                     <section className="panel help-panel">

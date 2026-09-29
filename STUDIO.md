@@ -97,3 +97,32 @@ To explicitly add samples to an existing library without overwriting its labels,
 ```
 
 Explicit addition restores missing sample IDs but preserves existing samples, including edits.
+
+### Shared defaults and fonts
+
+Open **Settings** to set the default typeface, text size, orientation, roll, and margin.
+The settings apply to new labels; existing saved documents retain their formatting.
+New-label actions fetch the current settings so other devices pick up changes too.
+The printer status supplies roll dimensions. Where several rolls share dimensions
+(such as 62 mm black-only and black/red), choose the exact stock manually.
+
+Settings live in `settings.json` and downloaded/uploaded fonts in `fonts/`, next to
+`STUDIO_LABELS_DIR`, or under `STUDIO_DATA_DIR` if set. With the included Pi deployment,
+these are `/var/lib/label-studio/settings.json` and `/var/lib/label-studio/fonts`.
+Back up the entire data directory to preserve settings, fonts, licenses, and labels.
+The legacy editor keeps its own configuration defaults.
+
+The bundled Google Fonts catalog lists 2,046 families at its recorded repository
+revision. Installing a family downloads one upright regular face when available,
+plus its license, directly from the official `google/fonts` repository. Variable
+fonts are instantiated at normal weight for predictable rendering. Nothing is
+fetched from Google by the browser. Font files remain local for offline printing.
+Uploads accept TTF/OTF files up to 8 MiB and validate them with fontTools and Pillow.
+Administrators can regenerate the catalog with `python tools/update_font_catalog.py`.
+No Google API key is required. On macOS, Python needs a working CA certificate store;
+`SSL_CERT_FILE=/etc/ssl/cert.pem` can be used with Apple's system certificates.
+
+Brother documents black/red density adjustments from -6 to +6 in its Printer
+Setting Tool, but does not describe a density command in the QL-800 raster reference.
+This app does not send guessed hardware-density commands. See
+[Brother's density instructions](https://support.brother.ca/app/answers/detail/a_id/159086/kw/guide).

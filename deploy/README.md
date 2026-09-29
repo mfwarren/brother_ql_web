@@ -39,3 +39,8 @@ This restores the original port-80 app. It does not delete modern labels or chan
 sudo systemctl disable --now brother_ql_web.service
 sudo systemctl enable --now label-studio.service
 ```
+
+UI preferences and installed fonts persist alongside the label library in
+`/var/lib/label-studio/settings.json` and `/var/lib/label-studio/fonts/`. Include
+both in backups. No extra deployment configuration is needed. Set `STUDIO_DATA_DIR`
+only when these should live somewhere other than the parent of `STUDIO_LABELS_DIR`.

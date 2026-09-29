@@ -28,6 +28,7 @@ import {
     api,
     errorMessage,
     starter,
+    labelTitle,
     type Config,
     type Content,
     type Draft,
@@ -36,8 +37,9 @@ import {
 } from "./api";
 import LibraryView from "./LibraryView";
 import PrinterView from "./PrinterView";
+import SettingsView from "./SettingsView";
 
-type Page = "editor" | "library" | "printer";
+type Page = "editor" | "library" | "printer" | "settings";
 type Preview =
     | { kind: "empty" }
     | { kind: "pending" }
@@ -104,6 +106,7 @@ export default function App() {
                             state: "unknown",
                             model: "QL-800",
                             media: null,
+                            matchingSizes: [],
                             message: errorMessage(error),
                         });
                 });
@@ -200,14 +203,18 @@ export default function App() {
     function notify(text: string, error = false) {
         setNotice({ text, error });
     }
-    function newLabel() {
-        if (config) {
+    async function newLabel() {
+        try {
+            const latest = await api.config();
+            setConfig(latest);
             contentDrafts.current.clear();
-            setDraft(starter(config));
+            setDraft(starter(latest));
             setActiveId(null);
             setName("");
             setPage("editor");
             setNotice(null);
+        } catch (error) {
+            notify(errorMessage(error), true);
         }
     }
     function open(label: SavedLabel) {
@@ -233,6 +240,10 @@ export default function App() {
         } finally {
             setBusy(false);
         }
+    }
+    function showSave() {
+        if (!activeId && draft) setName(labelTitle(draft.content));
+        saveDialog.current?.showModal();
     }
     async function save() {
         if (!draft || !name.trim() || busy) return;
@@ -293,7 +304,11 @@ export default function App() {
     const canPrint =
         !!status && (status.state === "ready" || status.state === "simulation");
     const previewCurrent = preview.kind === "ready" && preview.key === draftKey;
-    const activeName = activeId ? name : "Untitled label";
+    const activeName = activeId
+        ? name
+        : draft
+          ? labelTitle(draft.content)
+          : "Label Studio";
     const sizeName =
         config?.sizes.find((size) => size.id === draft?.sizeId)?.name ??
         "62 mm continuous";
@@ -311,7 +326,7 @@ export default function App() {
                 return;
             if (event.key.toLowerCase() === "s") {
                 event.preventDefault();
-                if (previewCurrent && !busy) saveDialog.current?.showModal();
+                if (previewCurrent && !busy) showSave();
             }
             if (event.key === "Enter") {
                 event.preventDefault();
@@ -372,6 +387,15 @@ export default function App() {
                     >
                         <Printer size={18} />
                         <span>Printer</span>
+                    </button>
+                    <button
+                        className={
+                            page === "settings" ? "nav-item active" : "nav-item"
+                        }
+                        onClick={() => setPage("settings")}
+                    >
+                        <Settings2 size={18} />
+                        <span>Settings</span>
                     </button>
                 </nav>
                 <div className="sidebar-library">
@@ -436,7 +460,9 @@ export default function App() {
                             ? activeName
                             : page === "library"
                               ? "Labels"
-                              : "Printer"}
+                              : page === "settings"
+                                ? "Settings"
+                                : "Printer"}
                     </h1>
                     <div className="topbar-actions">
                         {page === "library" && (
@@ -460,9 +486,7 @@ export default function App() {
                                 <button
                                     className="button subtle"
                                     disabled={!previewCurrent || busy}
-                                    onClick={() =>
-                                        saveDialog.current?.showModal()
-                                    }
+                                    onClick={showSave}
                                 >
                                     <Save size={16} />
                                     Save
@@ -1300,6 +1324,13 @@ export default function App() {
                                         setDeleteTarget(label);
                                         deleteDialog.current?.showModal();
                                     }}
+                                />
+                            )}
+                            {page === "settings" && (
+                                <SettingsView
+                                    config={config}
+                                    status={status}
+                                    onConfig={setConfig}
                                 />
                             )}
                             {page === "printer" && (

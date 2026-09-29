@@ -46,6 +46,7 @@ class Fonts:
                                     style = record.toStr()
                                 if family and style:
                                     break
+                            font.close()
                             if family and style:
                                 self.fonts[family][style] = font_path
                         except Exception:
