@@ -14,11 +14,17 @@ The experimental [QL-800 settings utility](docs/linux-power-settings.md) can rea
 
 ## Ready-to-print samples
 
-First installs include three editable labels for standard 62 mm tape: Storage bin, Asset tag · QR, and This way up · Image. The QR encodes the sample identifier `ASSET-0042`. Open one from Labels, edit if needed, and print. Samples are created once; deleted samples stay deleted and existing libraries are preserved.
+First installs include eight examples for standard 62 mm tape: storage bin, asset QR tag, handling arrows, mailing address, file folder, visitor badge, inventory barcode, and guest Wi-Fi QR. The QR encodes the sample identifier `ASSET-0042`. Open one from Labels, edit if needed, and print. The mailing address and Wi-Fi credentials are placeholders. The inventory barcode is a fixed image encoding `SKU-0042`; editing its caption does not change the barcode. Use the advanced editor to generate a different linear barcode. Samples are created once; deleted samples stay deleted and existing libraries are preserved.
 
 | Text | QR | Image |
 | --- | --- | --- |
 | ![Storage bin](docs/samples/text.png) | ![Asset tag](docs/samples/qr.png) | ![Handling label](docs/samples/image.png) |
+
+The additional examples take inspiration from the common uses on [Brother’s QL-800 product page](https://www.brother.ca/en/p/QL800), using original artwork and sample content.
+
+| Mailing address | Visitor badge | Inventory barcode |
+| --- | --- | --- |
+| ![Address](docs/samples/mailing-address.png) | ![Badge](docs/samples/visitor-name-badge.png) | ![Barcode](docs/samples/inventory.png) |
 
 ## What changes
 

@@ -7,7 +7,7 @@ from app.studio import seed_starter_labels
 def test_first_install_samples_render_and_print_in_simulator(client):
     client.application.config['STUDIO_SEED_SAMPLES'] = True
     labels = client.get('/studio/api/labels').json['labels']
-    assert len(labels) == 3
+    assert len(labels) == 8
     assert {label['draft']['content']['kind'] for label in labels} == {'text', 'qr', 'image'}
     for label in labels:
         assert label['draft']['sizeId'] == '62'
@@ -40,7 +40,7 @@ def test_existing_library_is_left_alone_unless_explicitly_seeded(client):
         seed_starter_labels(add_to_existing=True)
         seed_starter_labels(add_to_existing=True)
     labels = client.get('/studio/api/labels').json['labels']
-    assert len(labels) == 4
+    assert len(labels) == 9
     assert created in labels
 
 
@@ -51,5 +51,19 @@ def test_concurrent_initial_visits_create_one_set(client):
             return session.get('/studio/api/labels').json['labels']
     with ThreadPoolExecutor(max_workers=4) as pool:
         results = list(pool.map(visit, range(4)))
-    assert all(len(labels) == 3 for labels in results)
+    assert all(len(labels) == 8 for labels in results)
     assert all(labels == results[0] for labels in results)
+
+
+def test_adding_new_samples_does_not_restore_deleted_old_samples(client):
+    client.application.config['STUDIO_SEED_SAMPLES'] = True
+    labels = client.get('/studio/api/labels').json['labels']
+    storage = next(label for label in labels if label['name'] == 'Storage bin')
+    address = next(label for label in labels if label['name'] == 'Mailing address')
+    client.delete('/studio/api/labels/' + storage['id'])
+    client.delete('/studio/api/labels/' + address['id'])
+    with client.application.app_context():
+        seed_starter_labels(add_to_existing=True, slugs={'mailing-address'})
+    names = {label['name'] for label in client.get('/studio/api/labels').json['labels']}
+    assert 'Mailing address' in names
+    assert 'Storage bin' not in names

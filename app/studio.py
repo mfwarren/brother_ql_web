@@ -359,7 +359,7 @@ def print_label():
         return {'kind': kind, 'copies': copies, 'message': message}
 
 
-def seed_starter_labels(*, add_to_existing=False):
+def seed_starter_labels(*, add_to_existing=False, slugs=None):
     from app.studio_samples import starter_labels
 
     directory = _repo_dir()
@@ -371,6 +371,8 @@ def seed_starter_labels(*, add_to_existing=False):
         fonts = {f'{family},{style}' for family, styles in app_module.FONTS.fonts.items() for style in styles}
         default = ','.join(app_module.FONTS.get_default_font())
         samples = starter_labels(fonts, default)
+        if slugs is not None:
+            samples = [sample for sample in samples if sample[0] in slugs]
         records = []
         for slug, name, draft in samples:
             label_id = str(uuid.uuid5(uuid.NAMESPACE_URL, 'https://github.com/mfwarren/brother_ql_web/starter/' + slug))

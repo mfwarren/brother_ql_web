@@ -14,3 +14,14 @@ def test_qr_decodes_to_exact_user_content(client, value):
     decoded = zxingcpp.read_barcode(Image.open(io.BytesIO(response.data)))
     assert decoded is not None
     assert decoded.text == value
+
+
+@pytest.mark.parametrize('name,value', [('Inventory · Code 128', 'SKU-0042'), ('Guest Wi-Fi · QR', 'WIFI:T:WPA;S:Guest Wi-Fi;P:change-me-123;;')])
+def test_sample_codes_decode(client, name, value):
+    client.application.config['STUDIO_SEED_SAMPLES'] = True
+    labels = client.get('/studio/api/labels').json['labels']
+    label = next(label for label in labels if label['name'] == name)
+    response = client.post('/studio/api/preview', json=label['draft'])
+    decoded = zxingcpp.read_barcode(Image.open(io.BytesIO(response.data)))
+    assert decoded is not None
+    assert decoded.text == value
