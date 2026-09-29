@@ -466,10 +466,15 @@ h3 {
     color: var(--muted);
     font-size: 11px;
 }
-.color-choice select {
+.color-choice select,
+.rich-toolbar select,
+.rich-toolbar .rich-size input,
+.vertical-choice select {
     border: 1px solid var(--line);
     border-radius: 4px;
     background: white;
+}
+.color-choice select {
     padding: 6px;
     min-height: 32px;
 }
