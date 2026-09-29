@@ -9,7 +9,14 @@ import {
     Tag,
     Trash2,
 } from "lucide-react";
-import { api, type Config, type Draft, type SavedLabel } from "./api";
+import {
+    api,
+    paperMismatch,
+    type PrinterStatus,
+    type Config,
+    type Draft,
+    type SavedLabel,
+} from "./api";
 
 type Props = {
     labels: SavedLabel[];
@@ -19,6 +26,7 @@ type Props = {
     onNewLabel: () => void;
     simulated: boolean;
     canPrint: boolean;
+    status: PrinterStatus | null;
     busy: boolean;
     onPrint: (draft: Draft) => void;
     onPreview: typeof api.preview;
@@ -35,6 +43,7 @@ export default function LibraryView({
     onNewLabel,
     simulated,
     canPrint,
+    status,
     busy,
     onPrint,
     onPreview,
@@ -92,6 +101,11 @@ export default function LibraryView({
                                         ? "QR code"
                                         : label.draft.content.kind}
                                 </p>
+                                {paperMismatch(label.draft, status) && (
+                                    <p className="paper-mismatch-note">
+                                        Different paper loaded
+                                    </p>
+                                )}
                                 <div className="saved-actions">
                                     <button
                                         className="button subtle"
@@ -106,7 +120,11 @@ export default function LibraryView({
                                                 ? "Test print "
                                                 : "Print ") + label.name
                                         }
-                                        disabled={!canPrint || busy}
+                                        disabled={
+                                            !canPrint ||
+                                            busy ||
+                                            paperMismatch(label.draft, status)
+                                        }
                                         onClick={() => onPrint(label.draft)}
                                     >
                                         <Printer size={18} />

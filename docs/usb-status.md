@@ -43,3 +43,16 @@ shared settings. The UI checks every five seconds without overlapping requests.
 Saved labels and explicit manual roll choices retain their size. Detection does
 not overwrite saved records or the fallback size. The loaded dimensions include
 the length for die-cut stock; continuous stock has no fixed length.
+
+## Print preflight
+
+The editor shows a paper-mismatch warning and disables Print when the detected
+width, die-cut length, or ink-color mode differs from the selected label. The
+saved-label library marks incompatible labels and disables their quick-print
+buttons. Unknown color still uses the existing explicit red-stock confirmation.
+
+Every physical print first refreshes status in the browser. The server then
+queries the printer again under its shared device lock, before rendering or
+sending the job. A roll swap after the browser's last status update is rejected
+without sending print data. The checks apply to library printing and keyboard
+shortcuts as well as the editor button.

@@ -175,6 +175,16 @@ export const api = {
             ).json(),
         ),
 };
+export function paperMismatch(
+    draft: Draft,
+    status: PrinterStatus | null,
+): boolean {
+    return (
+        status?.state === "ready" &&
+        !status.matchingSizes.includes(draft.sizeId)
+    );
+}
+
 export function starter(config: Config): Draft {
     return {
         content: { kind: "text", text: "Coffee beans" },

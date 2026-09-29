@@ -1285,3 +1285,44 @@ details[open] summary > svg:last-child {
         padding: 16px;
     }
 }
+
+.paper-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: #8a4b08;
+    background: #fff3d6;
+    border: 1px solid #e8c67b;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-right: auto;
+    font-size: 12px;
+    min-width: 0;
+}
+.paper-warning svg {
+    flex-shrink: 0;
+}
+.paper-warning strong,
+.paper-warning span {
+    display: block;
+}
+.paper-mismatch .print-note {
+    display: none;
+}
+.saved-card-body .paper-mismatch-note {
+    color: #8a4b08;
+    font-weight: 600;
+}
+@media (max-width: 700px) {
+    .paper-mismatch .print-panel {
+        flex-wrap: wrap;
+    }
+    .paper-warning {
+        flex-basis: 100%;
+        order: -2;
+        font-size: 11px;
+    }
+    .page-editor.paper-mismatch .workspace {
+        padding-bottom: 225px;
+    }
+}

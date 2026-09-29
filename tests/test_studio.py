@@ -243,3 +243,33 @@ def test_save_rejects_corrupt_image_with_valid_header(client):
     invalid = draft(client, {'kind': 'image', 'image': image, 'caption': '', 'mode': 'bw', 'fit': True})
     assert client.post('/studio/api/labels', json={'name': 'Broken', 'draft': invalid}).status_code == 400
     assert client.get('/studio/api/labels').json['labels'] == []
+
+
+@pytest.mark.parametrize('loaded', [
+    {'media_width': 29, 'media_length': 0, 'media_color': 'black'},
+    {'media_width': 62, 'media_length': 100, 'media_type': 'Die-cut labels', 'media_color': 'black'},
+    {'media_width': 62, 'media_length': 0, 'media_color': 'black-red'},
+])
+def test_print_rechecks_changed_roll_before_render_or_send(client, monkeypatch, tmp_path, loaded):
+    import app.studio as studio
+    device = tmp_path / 'fake-usb'
+    device.touch()
+    client.application.config['PRINTER_PRINTER'] = 'file://' + str(device)
+    raw = {'model': 'QL-800', 'status_type': 'Reply to status request', 'status_code': 0,
+           'phase_type': 'Waiting to receive', 'media_type': 'Continuous length tape',
+           'media_width': 62, 'media_length': 0, 'media_color': 'black', 'errors': []}
+    calls = []
+    def query(device):
+        calls.append(device)
+        return dict(raw)
+    monkeypatch.setattr(studio, 'query_printer_status', query)
+    label = draft(client)
+    label['sizeId'] = '62'
+    assert client.get('/studio/api/status').json['matchingSizes'] == ['62']
+    raw.update(loaded)
+    monkeypatch.setattr(studio, '_render', lambda *args: pytest.fail('Rendered a mismatched job'))
+    monkeypatch.setattr(studio.PrinterQueue, 'process_queue', lambda *args: pytest.fail('Sent a mismatched job'))
+    result = client.post('/studio/api/print', json={
+        'draft': label, 'copies': 1, 'cut': 'each', 'confirmRedMedia': True})
+    assert result.status_code == 503
+    assert len(calls) == 2

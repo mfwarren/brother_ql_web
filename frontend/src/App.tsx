@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+    AlertTriangle,
     AlignCenter,
     AlignLeft,
     AlignRight,
@@ -29,6 +30,7 @@ import {
     errorMessage,
     starter,
     labelTitle,
+    paperMismatch,
     type Config,
     type Content,
     type Draft,
@@ -272,18 +274,35 @@ export default function App() {
     }
     async function print(target: Draft, count = 1, confirmRedMedia = false) {
         if (busy) return;
-        if (
-            config?.mode === "physical" &&
-            target.sizeId === "62red" &&
-            !confirmRedMedia &&
-            status?.mediaColor !== "black-red"
-        ) {
-            setRedPrint({ draft: target, copies: count });
-            redDialog.current?.showModal();
-            return;
-        }
         setBusy(true);
         try {
+            if (config?.mode === "physical") {
+                const fresh = await api.status();
+                setStatus(fresh);
+                if (fresh.state !== "ready") {
+                    notify(fresh.message, true);
+                    return;
+                }
+                if (paperMismatch(target, fresh)) {
+                    const required =
+                        config.sizes.find((size) => size.id === target.sizeId)
+                            ?.name ?? target.sizeId;
+                    notify(
+                        `Paper mismatch. Label needs ${required}; loaded: ${fresh.media ?? "unknown"}.`,
+                        true,
+                    );
+                    return;
+                }
+                if (
+                    target.sizeId === "62red" &&
+                    !confirmRedMedia &&
+                    fresh.mediaColor !== "black-red"
+                ) {
+                    setRedPrint({ draft: target, copies: count });
+                    redDialog.current?.showModal();
+                    return;
+                }
+            }
             const result = await api.print(target, count, cut, confirmRedMedia);
             notify(result.message);
             void api
@@ -292,6 +311,10 @@ export default function App() {
                 .catch(() => setStatus(null));
         } catch (error) {
             notify(errorMessage(error), true);
+            void api
+                .status()
+                .then(setStatus)
+                .catch(() => setStatus(null));
         } finally {
             setBusy(false);
         }
@@ -358,6 +381,8 @@ export default function App() {
     const simulated = config?.mode === "simulation";
     const canPrint =
         !!status && (status.state === "ready" || status.state === "simulation");
+    const mismatchedPaper =
+        !simulated && !!draft && paperMismatch(draft, status);
     const previewCurrent = preview.kind === "ready" && preview.key === draftKey;
     const activeName = activeId
         ? name
@@ -388,6 +413,7 @@ export default function App() {
                 if (
                     draft &&
                     canPrint &&
+                    !mismatchedPaper &&
                     previewCurrent &&
                     !busy &&
                     Number.isInteger(copies) &&
@@ -402,7 +428,9 @@ export default function App() {
     });
 
     return (
-        <div className={`shell page-${page}`}>
+        <div
+            className={`shell page-${page}${mismatchedPaper ? " paper-mismatch" : ""}`}
+        >
             <aside className="sidebar">
                 <a
                     className="brand"
@@ -1324,6 +1352,27 @@ export default function App() {
                                                 </div>
                                             </section>
                                             <section className="print-panel panel">
+                                                {mismatchedPaper && (
+                                                    <div
+                                                        className="paper-warning"
+                                                        role="alert"
+                                                    >
+                                                        <AlertTriangle
+                                                            size={18}
+                                                            aria-hidden="true"
+                                                        />
+                                                        <div>
+                                                            <strong>
+                                                                Paper mismatch
+                                                            </strong>
+                                                            <span>
+                                                                Needs {sizeName}
+                                                                . Loaded:{" "}
+                                                                {status?.media}.
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                )}
                                                 <div className="print-options">
                                                     <label className="field">
                                                         Copies
@@ -1351,6 +1400,7 @@ export default function App() {
                                                     title="Print (⌘/Ctrl + Enter)"
                                                     disabled={
                                                         !canPrint ||
+                                                        mismatchedPaper ||
                                                         !previewCurrent ||
                                                         busy ||
                                                         copies < 1 ||
@@ -1384,7 +1434,9 @@ export default function App() {
                                                         : !canPrint
                                                           ? status?.message ||
                                                             "Checking the printer…"
-                                                          : "Ready"}
+                                                          : mismatchedPaper
+                                                            ? "Change the roll or label settings"
+                                                            : "Ready"}
                                                 </p>
                                             </section>
                                         </div>
@@ -1400,6 +1452,7 @@ export default function App() {
                                     onNewLabel={newLabel}
                                     simulated={simulated ?? false}
                                     canPrint={canPrint}
+                                    status={simulated ? null : status}
                                     busy={busy}
                                     onPrint={(target) => void print(target)}
                                     onPreview={api.preview}
