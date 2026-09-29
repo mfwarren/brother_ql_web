@@ -25,5 +25,5 @@ def label_info(label):
         name += ' · ' + ' / '.join(codes[:2])
     elif label.identifier == '12+17':
         name += ' (12+17 profile)'
-    return {'id': label.identifier, 'name': name, 'codes': codes,
+    return {'fixedSize': label.form_factor in (FormFactor.DIE_CUT, FormFactor.ROUND_DIE_CUT), 'id': label.identifier, 'name': name, 'codes': codes,
             'description': details.get('description', 'Generic driver profile')}

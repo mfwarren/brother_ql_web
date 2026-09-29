@@ -69,6 +69,13 @@ export default function App() {
     const [name, setName] = useState("");
     const [search, setSearch] = useState("");
     const [preview, setPreview] = useState<Preview>({ kind: "empty" });
+    const [displayedUrl, setDisplayedUrl] = useState<string | null>(null);
+    useEffect(
+        () => () => {
+            if (displayedUrl) URL.revokeObjectURL(displayedUrl);
+        },
+        [displayedUrl],
+    );
     const [copies, setCopies] = useState(1);
     const [cut, setCut] = useState<"each" | "end">("each");
     const [busy, setBusy] = useState(false);
@@ -167,7 +174,6 @@ export default function App() {
         if (!draft) return;
         const sequence = ++previewSequence.current;
         const controller = new AbortController();
-        let url: string | null = null;
         const content = draft.content;
         const empty =
             content.kind === "text"
@@ -176,19 +182,36 @@ export default function App() {
                   ? !content.code.trim()
                   : !content.image;
         if (empty) {
+            setDisplayedUrl(null);
             setPreview({ kind: "empty" });
             return;
         }
         setPreview({ kind: "pending" });
         const timer = window.setTimeout(() => {
             api.preview(draft, controller.signal)
-                .then((blob) => {
+                .then(async (blob) => {
                     if (
                         controller.signal.aborted ||
                         sequence !== previewSequence.current
                     )
                         return;
-                    url = URL.createObjectURL(blob);
+                    const url = URL.createObjectURL(blob);
+                    const image = new Image();
+                    image.src = url;
+                    try {
+                        await image.decode();
+                    } catch (error) {
+                        URL.revokeObjectURL(url);
+                        throw error;
+                    }
+                    if (
+                        controller.signal.aborted ||
+                        sequence !== previewSequence.current
+                    ) {
+                        URL.revokeObjectURL(url);
+                        return;
+                    }
+                    setDisplayedUrl(url);
                     setPreview({
                         kind: "ready",
                         url,
@@ -209,7 +232,6 @@ export default function App() {
         return () => {
             window.clearTimeout(timer);
             controller.abort();
-            if (url) URL.revokeObjectURL(url);
         };
     }, [draft]);
 
@@ -1030,6 +1052,59 @@ export default function App() {
                                                             ),
                                                         )}
                                                     </div>
+                                                    {draft.content.kind ===
+                                                        "text" &&
+                                                        config.sizes.find(
+                                                            (item) =>
+                                                                item.id ===
+                                                                draft.sizeId,
+                                                        )?.fixedSize && (
+                                                            <label className="vertical-choice">
+                                                                Vertical
+                                                                <select
+                                                                    aria-label="Vertical alignment"
+                                                                    value={
+                                                                        draft.verticalAlign ??
+                                                                        (draft.orientation ===
+                                                                        "rotated"
+                                                                            ? "center"
+                                                                            : "top")
+                                                                    }
+                                                                    onChange={(
+                                                                        event,
+                                                                    ) => {
+                                                                        const value =
+                                                                            event
+                                                                                .target
+                                                                                .value;
+                                                                        if (
+                                                                            value ===
+                                                                                "top" ||
+                                                                            value ===
+                                                                                "center" ||
+                                                                            value ===
+                                                                                "bottom"
+                                                                        )
+                                                                            update(
+                                                                                {
+                                                                                    verticalAlign:
+                                                                                        value,
+                                                                                },
+                                                                            );
+                                                                    }}
+                                                                >
+                                                                    <option value="top">
+                                                                        Top
+                                                                    </option>
+                                                                    <option value="center">
+                                                                        Center
+                                                                    </option>
+                                                                    <option value="bottom">
+                                                                        Bottom
+                                                                    </option>
+                                                                </select>
+                                                            </label>
+                                                        )}
                                                     <label className="color-choice">
                                                         <span>Ink</span>
                                                         <select
@@ -1263,31 +1338,52 @@ export default function App() {
                                                               : "Preview"}
                                                     </span>
                                                 </div>
-                                                <div className="preview-stage">
+                                                <div
+                                                    className="preview-stage"
+                                                    aria-busy={
+                                                        preview.kind ===
+                                                        "pending"
+                                                    }
+                                                >
+                                                    {preview.kind ===
+                                                        "pending" && (
+                                                        <div
+                                                            className="preview-update"
+                                                            role="status"
+                                                            aria-label="Updating preview"
+                                                        >
+                                                            <LoaderCircle
+                                                                className="spin"
+                                                                size={18}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                    {displayedUrl &&
+                                                        preview.kind ===
+                                                            "error" && (
+                                                            <div
+                                                                className="preview-update preview-error"
+                                                                role="alert"
+                                                            >
+                                                                {
+                                                                    preview.message
+                                                                }
+                                                            </div>
+                                                        )}
                                                     <span className="dimension">
                                                         {sizeName}
                                                     </span>
                                                     <div className="label-artwork">
-                                                        {preview.kind ===
-                                                        "ready" ? (
+                                                        {displayedUrl ? (
                                                             <img
                                                                 src={
-                                                                    preview.url
+                                                                    displayedUrl
                                                                 }
                                                                 alt="Rendered label preview"
                                                             />
                                                         ) : preview.kind ===
                                                           "pending" ? (
-                                                            <div className="preview-placeholder">
-                                                                <LoaderCircle
-                                                                    className="spin"
-                                                                    size={24}
-                                                                />
-                                                                <span>
-                                                                    Rendering
-                                                                    your label…
-                                                                </span>
-                                                            </div>
+                                                            <div className="preview-placeholder" />
                                                         ) : preview.kind ===
                                                           "error" ? (
                                                             <div

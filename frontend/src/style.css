@@ -1445,4 +1445,40 @@ details[open] summary > svg:last-child {
     opacity: 1;
 }
 
-.rich-toolbar .rich-font-style { max-width: 150px; min-width: 100px; }
+.rich-toolbar .rich-font-style {
+    max-width: 150px;
+    min-width: 100px;
+}
+
+.preview-stage {
+    position: relative;
+}
+.preview-update {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 6px;
+    border-radius: 6px;
+    background: #ffffffed;
+    z-index: 1;
+    max-width: calc(100% - 16px);
+    font-size: 12px;
+}
+.rich-toolbar select,
+.rich-toolbar .rich-size input,
+.rich-toolbar .icon-button {
+    height: 36px;
+    min-height: 36px;
+    box-sizing: border-box;
+}
+.vertical-choice {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+}
+.vertical-choice select {
+    width: auto;
+}
+.format-row { flex-wrap: wrap; }
+.rich-editor { min-width: 0; }

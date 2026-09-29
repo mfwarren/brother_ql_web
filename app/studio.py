@@ -89,6 +89,8 @@ def _validate_draft(draft):
     align = draft.get('align')
     if align not in ('left', 'center', 'right'):
         raise InputError('Invalid alignment.')
+    if draft.get('verticalAlign', 'top') not in ('top', 'center', 'bottom'):
+        raise InputError('Invalid vertical alignment.')
     color = draft.get('color')
     if color not in ('black', 'red'):
         raise InputError('Invalid color.')
@@ -171,8 +173,10 @@ def _to_upstream(draft, image_bytes):
 
 
 def _render(draft, image_bytes):
-    if draft['content']['kind'] == 'text' and 'paragraphs' in draft['content']:
+    if draft['content']['kind'] == 'text' and ('paragraphs' in draft['content'] or 'verticalAlign' in draft):
         from app.rich_text import render_label
+        if 'paragraphs' not in draft['content']:
+            draft = {**draft, 'content': {**draft['content'], 'paragraphs': [{'runs': [{'text': line}]} for line in draft['content']['text'].split('\n')]}}
         return render_label(draft)
     from app.labeldesigner.routes import create_label_from_request
     values, files = _to_upstream(draft, image_bytes)

@@ -13,3 +13,7 @@ Measured on the Raspberry Pi 3: the old Montserrat conversion took about 72 seco
 Verification covers unchanged downloaded bytes, variation axes and actual ink changes, restart persistence, legacy-name migration, formatting serialization, saved-label preview equality, simulated printing, wrapping, malformed content, and overflow. Physical output still needs user evaluation with the loaded roll.
 
 The toolbar lists each font family once, with a separate style selector for its installed faces (Thin, Regular, Bold, Italic, and others). Bold and italic shortcuts update the selected face. Underline is drawn into the print raster, including wrapped runs.
+
+Preview updates retain the last decoded image while a corner spinner indicates pending work. New images replace it only after decoding; failed previews show an overlay and keep printing disabled until a current preview succeeds. All formatting controls share a 36 px height.
+
+Fixed-size text labels offer Top, Center, and Bottom vertical alignment. This setting is saved with the label and applies to visible text bounds inside the margins in either orientation. Continuous media retains its content-driven length. Existing labels keep their prior placement until an alignment is selected.

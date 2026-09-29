@@ -2,7 +2,7 @@
 import math
 import re
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageChops
 from brother_ql.labels import ALL_LABELS, FormFactor
 
 import app as app_module
@@ -142,6 +142,15 @@ def render_label(draft):
     if (width and width <= margin*2) or (height and height <= margin*2):
         raise ValueError('Margins leave no printable text area.')
     image = text_image(draft, width-margin*2 if width else 0, height-margin*2 if height else 0)
+    if 'verticalAlign' in draft and media.form_factor in (FormFactor.DIE_CUT, FormFactor.ROUND_DIE_CUT):
+        available = height - margin*2
+        bounds = ImageChops.difference(image, Image.new('RGB', image.size, 'white')).getbbox()
+        if bounds:
+            image = image.crop((0, bounds[1], image.width, bounds[3]))
+        offset = {'top': 0, 'center': (available-image.height)//2, 'bottom': available-image.height}[draft['verticalAlign']]
+        aligned = Image.new('RGB', (image.width, available), 'white')
+        aligned.paste(image, (0, offset))
+        image = aligned
     label_type = (LabelType.ENDLESS_LABEL if media.form_factor == FormFactor.ENDLESS else
                   LabelType.DIE_CUT_LABEL if media.form_factor == FormFactor.DIE_CUT else LabelType.ROUND_DIE_CUT_LABEL)
     return SimpleLabel(width=width, height=height, label_content=LabelContent.IMAGE_COLORED,

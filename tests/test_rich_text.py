@@ -169,3 +169,27 @@ def test_underline_is_saved_and_rendered(client):
     assert client.post('/studio/api/print', json={'draft':value,'copies':1,'cut':'each'}).status_code == 200
     value['content']['paragraphs'][0]['runs'][0]['underline'] = 'yes'
     assert client.post('/studio/api/preview', json=value).status_code == 400
+
+
+@pytest.mark.parametrize('orientation', ['standard', 'rotated'])
+def test_fixed_text_vertical_alignment_preserves_paper_size(client, orientation):
+    from PIL import ImageChops
+    from app.rich_text import render_label
+    value = rich_draft(client)
+    value.update(sizeId='29x90', orientation=orientation, fontSize=32)
+    value['content'] = {'kind':'text', 'text':'A', 'paragraphs':[{'runs':[{'text':'A'}]}]}
+    bounds = []
+    sizes = []
+    for alignment in ['top', 'center', 'bottom']:
+        value['verticalAlign'] = alignment
+        image = render_label(value).generate(rotate=False).convert('RGB')
+        box = ImageChops.difference(image, Image.new('RGB', image.size, 'white')).getbbox()
+        bounds.append(box)
+        sizes.append(image.size)
+    assert sizes[0] == sizes[1] == sizes[2]
+    assert bounds[0][1] < bounds[1][1] < bounds[2][1]
+    assert abs((bounds[1][1] + bounds[1][3]) / 2 - sizes[1][1] / 2) <= 1
+    saved = client.post('/studio/api/labels', json={'name':'Aligned','draft':value}).json
+    assert saved['draft']['verticalAlign'] == 'bottom'
+    value['verticalAlign'] = 'outside'
+    assert client.post('/studio/api/preview', json=value).status_code == 400
