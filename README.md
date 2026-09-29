@@ -14,7 +14,7 @@ The experimental [QL-800 settings utility](docs/linux-power-settings.md) can rea
 
 ## Ready-to-print samples
 
-First installs include eight examples for standard 62 mm tape: storage bin, asset QR tag, handling arrows, mailing address, file folder, visitor badge, inventory barcode, and guest Wi-Fi QR. The QR encodes the sample identifier `ASSET-0042`. Open one from Labels, edit if needed, and print. The mailing address and Wi-Fi credentials are placeholders. The inventory barcode is a fixed image encoding `SKU-0042`; editing its caption does not change the barcode. Use the advanced editor to generate a different linear barcode. Samples are created once; deleted samples stay deleted and existing libraries are preserved.
+First installs include nine examples: storage bin, asset QR tag, handling arrows, mailing address, file folder, visitor badge, inventory barcode, guest Wi-Fi QR, and a red Fragile label. Eight use standard 62 mm tape; Fragile is saved for 62 mm black/red tape. The QR encodes the sample identifier `ASSET-0042`. Open one from Labels, edit if needed, and print. The mailing address and Wi-Fi credentials are placeholders. The inventory barcode is a fixed image encoding `SKU-0042`; editing its caption does not change the barcode. Use the advanced editor to generate a different linear barcode. Samples are created once; deleted samples stay deleted and existing libraries are preserved.
 
 | Text | QR | Image |
 | --- | --- | --- |
@@ -25,6 +25,15 @@ The additional examples take inspiration from the common uses on [Brother’s QL
 | Mailing address | Visitor badge | Inventory barcode |
 | --- | --- | --- |
 | ![Address](docs/samples/mailing-address.png) | ![Badge](docs/samples/visitor-name-badge.png) | ![Barcode](docs/samples/inventory.png) |
+
+The compact **Fragile · Black/red tape** sample has an original broken-glass icon
+and red lettering. Its roll, orientation, margins, and resolution are saved with
+the label. Printing on physical hardware asks you to confirm black/red tape is
+loaded because the status reader cannot distinguish it from ordinary 62 mm tape.
+The image is horizontal across the roll, with roughly 23 mm of rendered content
+along the feed direction, plus the printer's feed/cut allowance.
+
+![Fragile label](docs/samples/fragile.png)
 
 ## What changes
 

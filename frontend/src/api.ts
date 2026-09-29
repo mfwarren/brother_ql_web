@@ -157,10 +157,18 @@ export const api = {
             method: "DELETE",
         });
     },
-    print: async (draft: Draft, copies: number, cut: "each" | "end") =>
+    print: async (
+        draft: Draft,
+        copies: number,
+        cut: "each" | "end",
+        confirmRedMedia = false,
+    ) =>
         printSchema.parse(
             await (
-                await response("/print", json("POST", { draft, copies, cut }))
+                await response(
+                    "/print",
+                    json("POST", { draft, copies, cut, confirmRedMedia }),
+                )
             ).json(),
         ),
 };

@@ -1,4 +1,4 @@
-"""Starter documents use installed fonts and standard 62 mm black tape."""
+"""Starter documents include black-only and explicitly marked black/red media."""
 import base64
 from pathlib import Path
 
@@ -11,6 +11,7 @@ def starter_labels(fonts, default_font):
             'margin': 24, 'highRes': False}
     image = base64.b64encode((Path(__file__).parent / 'samples' / 'handling.png').read_bytes()).decode('ascii')
     barcode = base64.b64encode((Path(__file__).parent / 'samples' / 'inventory.png').read_bytes()).decode('ascii')
+    fragile = base64.b64encode((Path(__file__).parent / 'samples' / 'fragile.png').read_bytes()).decode('ascii')
     return [
         ('storage-bin', 'Storage bin', {**base, 'content': {
             'kind': 'text', 'text': 'CABLES & ADAPTERS\nUSB / HDMI / POWER'}}),
@@ -31,4 +32,7 @@ def starter_labels(fonts, default_font):
         ('guest-wifi', 'Guest Wi-Fi · QR', {**base, 'fontSize': 30, 'content': {
             'kind': 'qr', 'code': 'WIFI:T:WPA;S:Guest Wi-Fi;P:change-me-123;;',
             'caption': 'GUEST WI-FI\nReplace sample network details'}}),
+        ('fragile-red', 'Fragile · Black/red tape', {**base, 'sizeId': '62red', 'orientation': 'standard', 'margin': 12, 'content': {
+            'kind': 'image', 'image': {'name': 'fragile.png', 'mime': 'image/png', 'base64': fragile},
+            'caption': '', 'mode': 'red', 'fit': True}}),
     ]

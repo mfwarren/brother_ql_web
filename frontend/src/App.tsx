@@ -74,6 +74,11 @@ export default function App() {
     } | null>(null);
     const [startupError, setStartupError] = useState("");
     const [deleteTarget, setDeleteTarget] = useState<SavedLabel | null>(null);
+    const [redPrint, setRedPrint] = useState<{
+        draft: Draft;
+        copies: number;
+    } | null>(null);
+    const redDialog = useRef<HTMLDialogElement>(null);
     const saveDialog = useRef<HTMLDialogElement>(null);
     const deleteDialog = useRef<HTMLDialogElement>(null);
     const uploadInput = useRef<HTMLInputElement>(null);
@@ -225,11 +230,20 @@ export default function App() {
         setPage("editor");
         setNotice(null);
     }
-    async function print(target: Draft, count = 1) {
+    async function print(target: Draft, count = 1, confirmRedMedia = false) {
         if (busy) return;
+        if (
+            config?.mode === "physical" &&
+            target.sizeId === "62red" &&
+            !confirmRedMedia
+        ) {
+            setRedPrint({ draft: target, copies: count });
+            redDialog.current?.showModal();
+            return;
+        }
         setBusy(true);
         try {
-            const result = await api.print(target, count, cut);
+            const result = await api.print(target, count, cut, confirmRedMedia);
             notify(result.message);
             void api
                 .status()
@@ -1355,6 +1369,42 @@ export default function App() {
                     )}
                 </div>
             </main>
+            <dialog
+                ref={redDialog}
+                className="dialog"
+                onCancel={() => setRedPrint(null)}
+            >
+                <div className="dialog-heading">
+                    <h2>Black/red tape loaded?</h2>
+                    <button
+                        className="icon-button"
+                        aria-label="Cancel red print"
+                        onClick={() => {
+                            redDialog.current?.close();
+                            setRedPrint(null);
+                        }}
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+                <p>
+                    This label is saved for 62 mm black/red tape. The printer
+                    reports the width, but cannot confirm the color type through
+                    this app.
+                </p>
+                <button
+                    className="button primary"
+                    disabled={!redPrint || busy}
+                    onClick={() => {
+                        const job = redPrint;
+                        redDialog.current?.close();
+                        setRedPrint(null);
+                        if (job) void print(job.draft, job.copies, true);
+                    }}
+                >
+                    Black/red tape is loaded · Print
+                </button>
+            </dialog>
             <dialog ref={saveDialog} className="dialog">
                 <form
                     onSubmit={(event) => {

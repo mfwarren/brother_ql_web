@@ -7,10 +7,10 @@ from app.studio import seed_starter_labels
 def test_first_install_samples_render_and_print_in_simulator(client):
     client.application.config['STUDIO_SEED_SAMPLES'] = True
     labels = client.get('/studio/api/labels').json['labels']
-    assert len(labels) == 8
+    assert len(labels) == 9
     assert {label['draft']['content']['kind'] for label in labels} == {'text', 'qr', 'image'}
     for label in labels:
-        assert label['draft']['sizeId'] == '62'
+        assert label['draft']['sizeId'] == ('62red' if label['name'] == 'Fragile · Black/red tape' else '62')
         assert_png(client.post('/studio/api/preview', json=label['draft']))
         result = client.post('/studio/api/print', json={'draft': label['draft'], 'copies': 1, 'cut': 'each'})
         assert result.status_code == 200
@@ -40,7 +40,7 @@ def test_existing_library_is_left_alone_unless_explicitly_seeded(client):
         seed_starter_labels(add_to_existing=True)
         seed_starter_labels(add_to_existing=True)
     labels = client.get('/studio/api/labels').json['labels']
-    assert len(labels) == 9
+    assert len(labels) == 10
     assert created in labels
 
 
@@ -51,7 +51,7 @@ def test_concurrent_initial_visits_create_one_set(client):
             return session.get('/studio/api/labels').json['labels']
     with ThreadPoolExecutor(max_workers=4) as pool:
         results = list(pool.map(visit, range(4)))
-    assert all(len(labels) == 8 for labels in results)
+    assert all(len(labels) == 9 for labels in results)
     assert all(labels == results[0] for labels in results)
 
 
@@ -67,3 +67,39 @@ def test_adding_new_samples_does_not_restore_deleted_old_samples(client):
     names = {label['name'] for label in client.get('/studio/api/labels').json['labels']}
     assert 'Mailing address' in names
     assert 'Storage bin' not in names
+
+
+def test_fragile_preserves_media_and_compact_landscape_layout(client):
+    import io
+    from PIL import Image
+    client.application.config['STUDIO_SEED_SAMPLES'] = True
+    labels = client.get('/studio/api/labels').json['labels']
+    fragile = next(label for label in labels if label['name'] == 'Fragile · Black/red tape')
+    client.put('/studio/api/labels/' + fragile['id'], json={'name': fragile['name'], 'draft': fragile['draft']})
+    loaded = next(label for label in client.get('/studio/api/labels').json['labels'] if label['id'] == fragile['id'])
+    assert loaded['draft'] == fragile['draft']
+    assert loaded['draft']['sizeId'] == '62red'
+    assert loaded['draft']['orientation'] == 'standard'
+    assert loaded['draft']['highRes'] is False
+    preview = client.post('/studio/api/preview', json=loaded['draft'])
+    image = Image.open(io.BytesIO(preview.data)).convert('RGB')
+    assert image.width > image.height
+    assert image.height < 600  # Less than 51 mm of feed at 300 dpi, not a 500 mm strip.
+    assert any(r > 150 and g < 80 and b < 80 for r, g, b in image.get_flattened_data())
+
+
+def test_red_media_requires_confirmation_before_printer_access(client, monkeypatch):
+    from app import studio
+    client.application.config['STUDIO_SEED_SAMPLES'] = True
+    fragile = next(label for label in client.get('/studio/api/labels').json['labels'] if label['draft']['sizeId'] == '62red')
+    monkeypatch.setattr(studio, '_device', lambda: 'file:///dev/test-printer')
+    calls = []
+    def status(device, size):
+        calls.append(size)
+        return {'state': 'offline', 'message': 'Test printer offline'}
+    monkeypatch.setattr(studio, '_status_locked', status)
+    body = {'draft': fragile['draft'], 'copies': 1, 'cut': 'each'}
+    assert client.post('/studio/api/print', json=body).status_code == 400
+    assert calls == []
+    assert client.post('/studio/api/print', json={**body, 'confirmRedMedia': True}).status_code == 503
+    assert calls == ['62red']

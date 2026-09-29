@@ -330,6 +330,8 @@ def print_label():
     if cut not in ('each', 'end'):
         raise InputError('Invalid cut option.')
     device = _device()
+    if device != 'simulation' and draft['sizeId'] == '62red' and data.get('confirmRedMedia') is not True:
+        raise InputError('Confirm that 62 mm black/red tape is loaded before printing.')
     if device != 'simulation':
         lock = _printer_lock()
     else:
