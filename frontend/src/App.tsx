@@ -31,6 +31,7 @@ import {
     starter,
     labelTitle,
     paperMismatch,
+    verticalAlignment,
     type Config,
     type Content,
     type Draft,
@@ -247,7 +248,12 @@ export default function App() {
         setDraft((current) => (current ? { ...current, ...values } : current));
     }
     function content(next: Content) {
-        update({ content: next });
+        update({
+            content: next,
+            ...(draft?.content.kind === "text" && next.kind === "text"
+                ? { verticalAlign: verticalAlignment(draft) }
+                : {}),
+        });
     }
     function changeKind(kind: Content["kind"]) {
         if (!draft || draft.content.kind === kind) return;
@@ -1063,13 +1069,9 @@ export default function App() {
                                                                 Vertical
                                                                 <select
                                                                     aria-label="Vertical alignment"
-                                                                    value={
-                                                                        draft.verticalAlign ??
-                                                                        (draft.orientation ===
-                                                                        "rotated"
-                                                                            ? "center"
-                                                                            : "top")
-                                                                    }
+                                                                    value={verticalAlignment(
+                                                                        draft,
+                                                                    )}
                                                                     onChange={(
                                                                         event,
                                                                     ) => {

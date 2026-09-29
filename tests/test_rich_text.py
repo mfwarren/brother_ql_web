@@ -193,3 +193,16 @@ def test_fixed_text_vertical_alignment_preserves_paper_size(client, orientation)
     assert saved['draft']['verticalAlign'] == 'bottom'
     value['verticalAlign'] = 'outside'
     assert client.post('/studio/api/preview', json=value).status_code == 400
+
+
+def test_plain_initial_top_matches_top_after_edit(client):
+    value = rich_draft(client)
+    value.update(sizeId='29x90', verticalAlign='top', fontSize=32)
+    value['content'] = {'kind':'text','text':'Coffee beans'}
+    initial = client.post('/studio/api/preview', json=value)
+    assert_png(initial)
+    value['content']['paragraphs'] = [{'runs':[{'text':'Coffee beans'}]}]
+    edited = client.post('/studio/api/preview', json=value)
+    assert initial.data == edited.data
+    value['verticalAlign'] = 'center'
+    assert client.post('/studio/api/preview', json=value).data != initial.data

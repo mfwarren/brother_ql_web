@@ -1479,6 +1479,15 @@ details[open] summary > svg:last-child {
 }
 .vertical-choice select {
     width: auto;
+    height: 36px;
+    min-height: 36px;
+    box-sizing: border-box;
+    padding: 4px;
+    font-size: 12px;
 }
-.format-row { flex-wrap: wrap; }
-.rich-editor { min-width: 0; }
+.format-row {
+    flex-wrap: wrap;
+}
+.rich-editor {
+    min-width: 0;
+}

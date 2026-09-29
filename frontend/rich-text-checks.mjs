@@ -9,3 +9,11 @@ assert.equal(fromDocument(toDocument({kind:'text',text:'Old label\nSecond line'}
 assert.equal(fromDocument({type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'A'},{type:'hardBreak'},{type:'text',text:'B'}]}]}).text,'A\nB');
 assert.throws(()=>fromDocument({type:'doc',content:[{type:'script',text:'bad'}]}));
 console.log('4 rich-text serialization checks passed');
+
+const {starter, verticalAlignment} = await import('./src/api.ts');
+const initial = starter({defaults:{sizeId:'29x90',font:'Roboto,Regular',fontSize:70,orientation:'standard',margin:24}});
+assert.equal(initial.verticalAlign,'top');
+assert.equal(verticalAlignment(initial),'top');
+assert.equal(verticalAlignment({...initial,verticalAlign:undefined}),'center');
+assert.equal(verticalAlignment({...initial,verticalAlign:undefined,content:text}),'top');
+console.log('Initial and legacy vertical alignment checks passed');

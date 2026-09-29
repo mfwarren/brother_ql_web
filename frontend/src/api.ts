@@ -217,6 +217,15 @@ export function paperMismatch(
     );
 }
 
+export function verticalAlignment(draft: Draft): "top" | "center" | "bottom" {
+    if (draft.verticalAlign) return draft.verticalAlign;
+    return draft.content.kind === "text" &&
+        draft.content.paragraphs &&
+        draft.orientation === "standard"
+        ? "top"
+        : "center";
+}
+
 export function starter(config: Config): Draft {
     return {
         content: { kind: "text", text: "Coffee beans" },
@@ -226,6 +235,7 @@ export function starter(config: Config): Draft {
         orientation: config.defaults.orientation,
         margin: config.defaults.margin,
         align: "center",
+        verticalAlign: "top",
         color: "black",
         highRes: false,
     };
