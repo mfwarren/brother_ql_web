@@ -151,3 +151,21 @@ def test_inline_fonts_survive_save_and_change_raster(client, isolated_fonts, mon
     assert client.post('/studio/api/preview', json=saved['draft']).data == changed.data
     value['content']['paragraphs'][0]['runs'][0]['font'] = '/etc/passwd'
     assert client.post('/studio/api/preview', json=value).status_code == 400
+
+
+def test_underline_is_saved_and_rendered(client):
+    value = rich_draft(client)
+    for paragraph in value['content']['paragraphs']:
+        for run in paragraph['runs']:
+            run.pop('italic', None)
+    plain = client.post('/studio/api/preview', json=value)
+    assert_png(plain)
+    value['content']['paragraphs'][0]['runs'][0]['underline'] = True
+    marked = client.post('/studio/api/preview', json=value)
+    assert_png(marked)
+    assert marked.data != plain.data
+    saved = client.post('/studio/api/labels', json={'name':'Underlined','draft':value}).json
+    assert client.post('/studio/api/preview', json=saved['draft']).data == marked.data
+    assert client.post('/studio/api/print', json={'draft':value,'copies':1,'cut':'each'}).status_code == 200
+    value['content']['paragraphs'][0]['runs'][0]['underline'] = 'yes'
+    assert client.post('/studio/api/preview', json=value).status_code == 400

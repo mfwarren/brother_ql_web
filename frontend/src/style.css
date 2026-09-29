@@ -1444,3 +1444,5 @@ details[open] summary > svg:last-child {
 .rich-size input::-webkit-inner-spin-button {
     opacity: 1;
 }
+
+.rich-toolbar .rich-font-style { max-width: 150px; min-width: 100px; }

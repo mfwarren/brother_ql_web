@@ -26,7 +26,7 @@ def validate_paragraphs(paragraphs, plain_text):
             raise ValueError('Too many formatting changes in this label.')
         line = ''
         for run in runs:
-            if not isinstance(run, dict) or set(run) - {'text', 'size', 'bold', 'italic', 'font'}:
+            if not isinstance(run, dict) or set(run) - {'text', 'size', 'bold', 'italic', 'font', 'underline'}:
                 raise ValueError('Invalid formatted text.')
             if not isinstance(run.get('text'), str) or '\n' in run['text'] or '\r' in run['text']:
                 raise ValueError('Use separate paragraphs for line breaks.')
@@ -39,7 +39,7 @@ def validate_paragraphs(paragraphs, plain_text):
                     raise ValueError('Choose an installed font.')
             if 'size' in run and (type(run['size']) is not int or not 8 <= run['size'] <= 200):
                 raise ValueError('Text size must be between 8 and 200 px.')
-            for mark in ('bold', 'italic'):
+            for mark in ('bold', 'italic', 'underline'):
                 if mark in run and type(run[mark]) is not bool:
                     raise ValueError('Invalid text style.')
             line += run['text']
@@ -73,7 +73,7 @@ def text_image(draft, width, height):
         while line and not line[-1][0].strip():
             line.pop()
         if line:
-            line[-1] = (line[-1][0].rstrip(), line[-1][1])
+            line[-1] = (line[-1][0].rstrip(), line[-1][1], line[-1][2])
         lines.append(line)
         line, advance = [], 0
     for paragraph in draft['content']['paragraphs']:
@@ -87,20 +87,20 @@ def text_image(draft, width, height):
                     fragment = ''
                     for char in token:
                         if fragment and advance + font.getlength(fragment + char) > max_width:
-                            line.append((fragment, font)); finish(); fragment = ''
+                            line.append((fragment, font, run.get('underline', False))); finish(); fragment = ''
                         fragment += char
                     token = fragment
                     token_width = font.getlength(token)
                 if token:
-                    line.append((token, font))
+                    line.append((token, font, run.get('underline', False)))
                     advance += token_width
         finish()
     layouts = []
     for runs in lines:
-        ascent = max((font.getmetrics()[0] for _, font in runs), default=fallback.getmetrics()[0])
-        descent = max((font.getmetrics()[1] for _, font in runs), default=fallback.getmetrics()[1])
+        ascent = max((font.getmetrics()[0] for _, font, _ in runs), default=fallback.getmetrics()[0])
+        descent = max((font.getmetrics()[1] for _, font, _ in runs), default=fallback.getmetrics()[1])
         x, left, right = 0, 0, 0
-        for text, font in runs:
+        for text, font, underline in runs:
             box = font.getbbox(text, anchor='ls')
             left = min(left, x + box[0]); right = max(right, x + box[2])
             x += font.getlength(text)
@@ -117,8 +117,12 @@ def text_image(draft, width, height):
     y = 0
     for runs, ascent, descent, left, ink_width in layouts:
         x = {'left': 0, 'center': (actual_width-ink_width)/2, 'right': actual_width-ink_width}[draft['align']] - left
-        for text, font in runs:
+        for text, font, underline in runs:
             draw.text((x, y+ascent), text, font=font, fill=draft['color'], anchor='ls')
+            if underline and text:
+                thickness = max(1, round(font.size / 16))
+                baseline = min(y + ascent + max(1, round(font.size / 12)), y + ascent + descent - thickness)
+                draw.rectangle((x, baseline, x + font.getlength(text), baseline + thickness - 1), fill=draft['color'])
             x += font.getlength(text)
         y += ascent + descent
     return image

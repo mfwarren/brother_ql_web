@@ -11,6 +11,7 @@ export const textRunSchema = z.object({
     size: z.number().int().min(8).max(200).optional(),
     bold: z.boolean().optional(),
     italic: z.boolean().optional(),
+    underline: z.boolean().optional(),
 });
 export const paragraphsSchema = z.array(
     z.object({ runs: z.array(textRunSchema) }),

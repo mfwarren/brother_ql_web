@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {fromDocument,toDocument} from './src/rich-text.ts';
 const text={kind:'text',text:'Headline\nSmall bold italic',paragraphs:[
-  {runs:[{text:'Headline',font:'Roboto,Regular',size:96,bold:true}]},
+  {runs:[{text:'Headline',font:'Roboto,Regular',size:96,bold:true,underline:true}]},
   {runs:[{text:'Small ',size:24},{text:'bold',bold:true},{text:' italic',italic:true}]},
 ]};
 assert.deepEqual(fromDocument(toDocument(text)),text);

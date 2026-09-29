@@ -4,7 +4,14 @@ import { Extension } from "@tiptap/core";
 import { Plugin } from "@tiptap/pm/state";
 import StarterKit from "@tiptap/starter-kit";
 import { TextStyle, FontSize } from "@tiptap/extension-text-style";
-import { Bold, Italic, Undo2, Redo2, RemoveFormatting } from "lucide-react";
+import {
+    Bold,
+    Italic,
+    Underline,
+    Undo2,
+    Redo2,
+    RemoveFormatting,
+} from "lucide-react";
 import {
     fontSize,
     fromDocument,
@@ -83,7 +90,6 @@ const extensions = [
         codeBlock: false,
         horizontalRule: false,
         link: false,
-        underline: false,
         strike: false,
         trailingNode: false,
     }),
@@ -200,6 +206,44 @@ export default function RichTextEditor({
         .join("\n");
     if (!editor) return null;
     const selectedSize = fontSize(editor.getAttributes("textStyle").fontSize);
+    const selectedFont =
+        fonts.find(
+            (face) =>
+                face.id === (editor.getAttributes("textStyle").font ?? font),
+        ) ?? fonts[0];
+    const family = selectedFont.id.split(",")[0];
+    const familyFaces = fonts.filter(
+        (face) => face.id.split(",")[0] === family,
+    );
+    const weight = editor.isActive("bold") ? 700 : selectedFont.weight;
+    const italic = editor.isActive("italic") || selectedFont.italic;
+    const nearest = (faces: Config["fonts"]) =>
+        [...faces].sort(
+            (a, b) =>
+                Number(a.italic !== italic) * 1000 +
+                Math.abs(a.weight - weight) -
+                (Number(b.italic !== italic) * 1000 +
+                    Math.abs(b.weight - weight)),
+        )[0];
+    const effectiveFace = nearest(familyFaces);
+    const selectFace = (id: string) =>
+        editor
+            .chain()
+            .focus()
+            .unsetBold()
+            .unsetItalic()
+            .setMark("textStyle", { font: id })
+            .run();
+    const changeStyle = (targetWeight: number, targetItalic: boolean) => {
+        const face = [...familyFaces]
+            .filter((face) => face.italic === targetItalic)
+            .sort(
+                (a, b) =>
+                    Math.abs(a.weight - targetWeight) -
+                    Math.abs(b.weight - targetWeight),
+            )[0];
+        if (face) selectFace(face.id);
+    };
     return (
         <div className="rich-editor">
             <style>{styles}</style>
@@ -209,22 +253,46 @@ export default function RichTextEditor({
                 aria-label="Text formatting"
             >
                 <select
-                    aria-label="Text font"
+                    aria-label="Font family"
                     className="rich-font"
-                    value={editor.getAttributes("textStyle").font ?? font}
+                    value={family}
                     onChange={(event) =>
-                        editor
-                            .chain()
-                            .focus()
-                            .setMark("textStyle", { font: event.target.value })
-                            .run()
+                        selectFace(
+                            nearest(
+                                fonts.filter(
+                                    (face) =>
+                                        face.id.split(",")[0] ===
+                                        event.target.value,
+                                ),
+                            ).id,
+                        )
                     }
                 >
-                    {fonts.map((face) => (
-                        <option key={face.id} value={face.id}>
-                            {face.name}
-                        </option>
-                    ))}
+                    {[...new Set(fonts.map((face) => face.id.split(",")[0]))]
+                        .sort((a, b) => a.localeCompare(b))
+                        .map((name) => (
+                            <option key={name} value={name}>
+                                {name}
+                            </option>
+                        ))}
+                </select>
+                <select
+                    aria-label="Font style"
+                    className="rich-font-style"
+                    value={effectiveFace.id}
+                    onChange={(event) => selectFace(event.target.value)}
+                >
+                    {[...familyFaces]
+                        .sort(
+                            (a, b) =>
+                                Number(a.italic) - Number(b.italic) ||
+                                a.weight - b.weight,
+                        )
+                        .map((face) => (
+                            <option key={face.id} value={face.id}>
+                                {face.id.split(",").slice(1).join(",")}
+                            </option>
+                        ))}
                 </select>
                 <TextSize
                     value={selectedSize ?? size}
@@ -236,9 +304,14 @@ export default function RichTextEditor({
                     type="button"
                     className="icon-button"
                     aria-label="Bold"
-                    aria-pressed={editor.isActive("bold")}
+                    aria-pressed={effectiveFace.weight >= 600}
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => editor.chain().focus().toggleBold().run()}
+                    onClick={() =>
+                        changeStyle(
+                            effectiveFace.weight >= 600 ? 400 : 700,
+                            effectiveFace.italic,
+                        )
+                    }
                 >
                     <Bold size={16} />
                 </button>
@@ -246,11 +319,25 @@ export default function RichTextEditor({
                     type="button"
                     className="icon-button"
                     aria-label="Italic"
-                    aria-pressed={editor.isActive("italic")}
+                    aria-pressed={effectiveFace.italic}
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => editor.chain().focus().toggleItalic().run()}
+                    onClick={() =>
+                        changeStyle(effectiveFace.weight, !effectiveFace.italic)
+                    }
                 >
                     <Italic size={16} />
+                </button>
+                <button
+                    type="button"
+                    className="icon-button"
+                    aria-label="Underline"
+                    aria-pressed={editor.isActive("underline")}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() =>
+                        editor.chain().focus().toggleUnderline().run()
+                    }
+                >
+                    <Underline size={16} />
                 </button>
                 <button
                     type="button"
@@ -264,6 +351,7 @@ export default function RichTextEditor({
                             .unsetBold()
                             .unsetItalic()
                             .unsetFontSize()
+                            .unsetUnderline()
                             .setMark("textStyle", { font: null })
                             .run()
                     }

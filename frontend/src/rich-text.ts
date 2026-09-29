@@ -6,6 +6,7 @@ export type TextContent = Extract<Content, { kind: "text" }>;
 const markSchema = z.discriminatedUnion("type", [
     z.object({ type: z.literal("bold") }),
     z.object({ type: z.literal("italic") }),
+    z.object({ type: z.literal("underline") }),
     z.object({
         type: z.literal("textStyle"),
         attrs: z
@@ -59,6 +60,7 @@ export function fromDocument(value: unknown): TextContent {
             for (const mark of node.marks ?? []) {
                 if (mark.type === "bold") run.bold = true;
                 if (mark.type === "italic") run.italic = true;
+                if (mark.type === "underline") run.underline = true;
                 if (mark.type === "textStyle") {
                     if (mark.attrs?.font) run.font = mark.attrs.font;
                     const size = fontSize(mark.attrs?.fontSize);
@@ -95,6 +97,7 @@ export function toDocument(value: TextContent): JSONContent {
                     marks: [
                         ...(run.bold ? [{ type: "bold" }] : []),
                         ...(run.italic ? [{ type: "italic" }] : []),
+                        ...(run.underline ? [{ type: "underline" }] : []),
                         ...(run.size || run.font
                             ? [
                                   {
