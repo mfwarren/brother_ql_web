@@ -358,8 +358,38 @@ def print_label():
         return {'kind': kind, 'copies': copies, 'message': message}
 
 
+def seed_starter_labels(*, add_to_existing=False):
+    from app.studio_samples import starter_labels
+
+    directory = _repo_dir()
+    marker = directory / '.starter-labels-v1'
+    with (directory / '.starter-labels.lock').open('a+b') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        if marker.exists() and not add_to_existing:
+            return
+        fonts = {f'{family},{style}' for family, styles in app_module.FONTS.fonts.items() for style in styles}
+        default = ','.join(app_module.FONTS.get_default_font())
+        samples = starter_labels(fonts, default)
+        records = []
+        for slug, name, draft in samples:
+            label_id = str(uuid.uuid5(uuid.NAMESPACE_URL, 'https://github.com/mfwarren/brother_ql_web/starter/' + slug))
+            records.append({'version': 1, 'id': label_id, 'name': name,
+                            'updatedAt': '2026-01-01T00:00:00+00:00', 'draft': draft})
+        sample_files = {record['id'] + '.json' for record in records}
+        existing = {path.name for path in directory.glob('*.json')}
+        if add_to_existing or existing <= sample_files:
+            for record in records:
+                path = directory / (record['id'] + '.json')
+                if not path.exists():
+                    _name_and_draft(record)
+                    _write_record(path, record)
+        _write_record(marker, {'version': 1})
+
+
 @bp.route('/api/labels')
 def list_labels():
+    if current_app.config.get('STUDIO_SEED_SAMPLES', True):
+        seed_starter_labels()
     labels = []
     for path in sorted(_repo_dir().glob('*.json')):
         try:

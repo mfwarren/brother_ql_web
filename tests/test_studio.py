@@ -22,7 +22,7 @@ from app.utils import pdffile_to_image
 @pytest.fixture
 def client(tmp_path):
     app = create_app()
-    app.config.update(TESTING=True, STUDIO_LABELS_DIR=str(tmp_path / 'labels'),
+    app.config.update(TESTING=True, STUDIO_SEED_SAMPLES=False, STUDIO_LABELS_DIR=str(tmp_path / 'labels'),
                       STUDIO_PRINTER_LOCK=str(tmp_path / 'printer.lock'), PRINTER_PRINTER='simulation')
     return app.test_client()
 

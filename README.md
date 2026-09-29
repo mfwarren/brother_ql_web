@@ -12,6 +12,14 @@ A compact React interface for a shared Brother label printer. Desktop toolbar an
 
 The experimental [QL-800 settings utility](docs/linux-power-settings.md) can read and disable Auto Power Off directly through Linux USB. A real QL-800 accepted a change from 60 minutes to disabled and returned the new value. Idle-period behavior and persistence after a power cycle remain to be tested. No Mac/Windows tool or firmware replacement was used.
 
+## Ready-to-print samples
+
+First installs include three editable labels for standard 62 mm tape: Storage bin, Asset tag · QR, and This way up · Image. The QR encodes the sample identifier `ASSET-0042`. Open one from Labels, edit if needed, and print. Samples are created once; deleted samples stay deleted and existing libraries are preserved.
+
+| Text | QR | Image |
+| --- | --- | --- |
+| ![Storage bin](docs/samples/text.png) | ![Asset tag](docs/samples/qr.png) | ![Handling label](docs/samples/image.png) |
+
 ## What changes
 
 | Area | Label Studio | Classic editor, still included |

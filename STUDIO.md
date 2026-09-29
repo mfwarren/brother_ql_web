@@ -61,7 +61,7 @@ The Pi successfully queried the powered-on QL-800. It reported 62 mm continuous 
 
 ```sh
 uv pip install --python .venv/bin/python -r requirements-dev.txt
-.venv/bin/python -m pytest tests/test_studio.py tests/test_studio_qr.py tests/test_printer_settings.py -q
+.venv/bin/python -m pytest tests/test_studio.py tests/test_studio_qr.py tests/test_printer_settings.py tests/test_studio_samples.py -q
 npm run build --prefix frontend
 git diff --check
 ```
@@ -83,3 +83,17 @@ The full production dependency set installed successfully on armv7l. Container b
 The interface follows the [mockup](docs/design/app-mockup.png) with a desktop saved-label sidebar, a label inspector, and persistent print controls. Tablets use a narrow navigation rail and touch controls. Phones put the preview first and keep Editor, Labels, and Printer navigation at the bottom. Font sizes in mobile inputs avoid automatic iOS zoom; safe-area insets accommodate home indicators.
 
 Save with Command/Control+S and print with Command/Control+Enter. These shortcuts are disabled while a dialog is open. Browser checks cover 1440×900, 834×1112, and 390×844 viewports. These are responsive browser checks, not tests on physical iOS hardware.
+
+## Starter labels
+
+A new modern library receives three editable samples on its first visit: Storage bin, Asset tag · QR, and This way up · Image. They use installed fonts and standard 62 mm black tape. The QR contains `ASSET-0042`; scanning it displays that identifier. The image is original monochrome artwork included in the project.
+
+Samples are added once, under a filesystem lock, with fixed IDs and an initialization marker. Deleting them does not recreate them; saved edits are preserved. Libraries that already contain user labels are left alone. Set `STUDIO_SEED_SAMPLES = False` to disable initialization. Include hidden files when backing up the library so the initialization marker is retained.
+
+To explicitly add samples to an existing library without overwriting its labels, run this from the app directory using the service account and its configuration:
+
+```sh
+.venv/bin/python -c 'from app import create_app; from app.studio import seed_starter_labels; app = create_app(); ctx = app.app_context(); ctx.push(); seed_starter_labels(add_to_existing=True)'
+```
+
+Explicit addition restores missing sample IDs but preserves existing samples, including edits.
