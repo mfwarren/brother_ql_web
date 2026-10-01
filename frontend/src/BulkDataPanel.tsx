@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { api, draftSchema, errorMessage, type Draft, type Config } from "./api";
-import RichTextEditor from "./RichTextEditor";
 
+const remoteImageSchema = z.object({
+    name: z.string(),
+    mime: z.string(),
+    base64: z.string(),
+});
 const preparedSchema = z.object({
     headers: z.array(z.string()),
     timestamp: z.string(),
@@ -39,16 +43,22 @@ async function post(path: string, body: unknown) {
         throw new Error(z.object({ message: z.string() }).parse(value).message);
     return value;
 }
-export default function BulkView({
-    initial,
+export default function BulkDataPanel({
+    template,
+    onTemplateChange,
+    onPreview,
+    onBusy,
     config,
-    onBack,
+    cut,
 }: {
-    initial: Draft;
+    template: Draft;
+    onTemplateChange: (draft: Draft) => void;
+    onPreview: (selection: { draft: Draft; row: number } | null) => void;
+    onBusy: (busy: boolean) => void;
     config: Config;
-    onBack: () => void;
+    cut: "each" | "end";
 }) {
-    const [template, setTemplate] = useState(initial);
+    const [activeRow, setActiveRow] = useState<number | null>(null);
     const [csv, setCsv] = useState("");
     const [filename, setFilename] = useState("");
     const [count, setCount] = useState(1);
@@ -78,6 +88,8 @@ export default function BulkView({
         controller.current?.abort();
         urls.current.forEach(URL.revokeObjectURL);
         urls.current = [];
+        onPreview(null);
+        setActiveRow(null);
         setHeaders([]);
         setTimestamp("");
         setRows([]);
@@ -128,16 +140,42 @@ export default function BulkView({
             setHeaders(prepared.headers);
             setTimestamp(prepared.timestamp);
             const results: Row[] = [];
+            const imageCache = new Map<
+                string,
+                z.infer<typeof remoteImageSchema>
+            >();
             for (const row of prepared.rows) {
                 if (abort.signal.aborted) return;
                 if (row.kind === "error") results.push(row);
                 else {
                     try {
-                        const blob = await api.preview(row.draft, abort.signal);
+                        let resolved = row.draft;
+                        if (
+                            resolved.content.kind === "image" &&
+                            resolved.content.imageUrl
+                        ) {
+                            const url = resolved.content.imageUrl;
+                            const image =
+                                imageCache.get(url) ??
+                                remoteImageSchema.parse(
+                                    await post("image", { url }),
+                                );
+                            imageCache.set(url, image);
+                            if (abort.signal.aborted) return;
+                            resolved = {
+                                ...resolved,
+                                content: {
+                                    ...resolved.content,
+                                    image,
+                                    imageUrl: undefined,
+                                },
+                            };
+                        }
+                        const blob = await api.preview(resolved, abort.signal);
                         if (abort.signal.aborted) return;
                         const url = URL.createObjectURL(blob);
                         urls.current.push(url);
-                        results.push({ ...row, url });
+                        results.push({ ...row, draft: resolved, url });
                     } catch (error) {
                         if (abort.signal.aborted) return;
                         results.push({
@@ -158,6 +196,8 @@ export default function BulkView({
                         .map((row) => row.row),
                 ),
             );
+            const first = results.find((row) => row.kind === "ready");
+            if (first) selectPreview(first);
             setJobId(prepared.jobId);
             setPhase("review");
         } catch (error) {
@@ -179,7 +219,7 @@ export default function BulkView({
             );
             const result = z
                 .object({ message: z.string() })
-                .parse(await post("print", { drafts, jobId }));
+                .parse(await post("print", { drafts, jobId, cut }));
             setMessage(result.message);
         } catch (error) {
             setMessage(
@@ -191,10 +231,18 @@ export default function BulkView({
     }
     const errors = rows.filter((row) => row.kind === "error").length;
     const locked = phase === "checking" || phase === "printing";
-    const content = template.content;
-    function updateContent(next: Draft["content"]) {
+    useEffect(() => {
         clear();
-        setTemplate({ ...template, content: next });
+    }, [template]);
+    useEffect(() => {
+        onBusy(phase === "printing");
+        return () => onBusy(false);
+    }, [phase, onBusy]);
+    function selectPreview(row: Row) {
+        setActiveRow(row.row);
+        onPreview(
+            row.kind === "ready" ? { draft: row.draft, row: row.row } : null,
+        );
     }
     function exportTemplate() {
         const url = URL.createObjectURL(
@@ -212,82 +260,28 @@ export default function BulkView({
         if (!file) return;
         clear();
         try {
-            setTemplate(draftSchema.parse(JSON.parse(await file.text())));
+            onTemplateChange(draftSchema.parse(JSON.parse(await file.text())));
         } catch {
             setMessage("That file is not a Label Studio template.");
         }
     }
     return (
         <section className="bulk-workspace">
-            <div className="bulk-actions">
-                <button className="button" onClick={onBack} disabled={locked}>
-                    Back to editor
-                </button>
-                <strong>1. Template & data → 2. Review → 3. Print</strong>
-            </div>
             <div className="bulk-setup">
                 <section className="panel bulk-panel">
-                    <h2>Label template</h2>
+                    <h2>Data fields</h2>
                     <p>
-                        Use <code>{"{{Product}}"}</code> for a CSV column.
-                        Column names are case-sensitive.
+                        Edit your label above using the usual Text, QR, Barcode,
+                        and Image controls. Use <code>{"{{Product}}"}</code> in
+                        any text or caption. In Image, use a CSV field such as{" "}
+                        <code>{"{{Photo}}"}</code> as its URL.
                     </p>
                     <fieldset disabled={locked} inert={locked}>
-                        {content.kind === "text" ? (
-                            <RichTextEditor
-                                value={content}
-                                onChange={updateContent}
-                                font={template.font}
-                                size={template.fontSize}
-                                fonts={config.fonts}
-                            />
-                        ) : (
-                            <>
-                                {(content.kind === "qr" ||
-                                    content.kind === "barcode") && (
-                                    <label className="field">
-                                        {content.kind === "qr"
-                                            ? "QR content"
-                                            : "Barcode value"}
-                                        <input
-                                            value={content.code}
-                                            onChange={(event) =>
-                                                updateContent({
-                                                    ...content,
-                                                    code: event.target.value,
-                                                })
-                                            }
-                                        />
-                                    </label>
-                                )}
-                                <label className="field">
-                                    Caption
-                                    <input
-                                        value={content.caption}
-                                        onChange={(event) =>
-                                            updateContent({
-                                                ...content,
-                                                caption: event.target.value,
-                                            })
-                                        }
-                                    />
-                                </label>
-                            </>
-                        )}
                         <p className="bulk-tokens">
                             <code>{"{{@today}}"}</code> YYYY-MM-DD ·{" "}
                             <code>{"{{@time}}"}</code> HH:mm ·{" "}
                             <code>{"{{@row}}"}</code> label number ·{" "}
                             <code>{"{{@total}}"}</code> row count
-                        </p>
-                        <p>
-                            Paper:{" "}
-                            {
-                                config.sizes.find(
-                                    (size) => size.id === template.sizeId,
-                                )?.name
-                            }
-                            . Change layout or barcode type in the editor.
                         </p>
                         <div className="bulk-actions">
                             <button className="button" onClick={exportTemplate}>
@@ -456,6 +450,14 @@ export default function BulkView({
                                     key={row.row}
                                 >
                                     <header>
+                                        <button
+                                            className="button subtle"
+                                            type="button"
+                                            aria-pressed={activeRow === row.row}
+                                            onClick={() => selectPreview(row)}
+                                        >
+                                            Preview {row.row}
+                                        </button>
                                         {row.kind === "ready" && (
                                             <input
                                                 aria-label={
@@ -541,8 +543,11 @@ export default function BulkView({
                         </h2>
                         <p>
                             {rows.length - selected.size} labels will be
-                            skipped. Each printed label will be cut. The loaded
-                            roll will be checked before printing.
+                            skipped.{" "}
+                            {cut === "each"
+                                ? "Each printed label will be cut."
+                                : "The batch will be cut after its last label."}{" "}
+                            The loaded roll will be checked before printing.
                         </p>
                         <div className="bulk-actions">
                             <button

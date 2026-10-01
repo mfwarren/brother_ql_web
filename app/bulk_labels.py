@@ -96,6 +96,8 @@ def merge(template, values):
             content['text'] = substitute(content['text'])
     else:
         content['caption'] = substitute(content['caption'])
+        if content['kind'] == 'image' and content.get('imageUrl'):
+            content['imageUrl'] = substitute(content['imageUrl'])
         if content['kind'] in ('qr', 'barcode'):
             content['code'] = substitute(content['code'])
     return result
@@ -128,7 +130,7 @@ def prepare(data):
                 raise ValueError(row['error'])
             values = {**row['values'], '@today': now.strftime('%Y-%m-%d'),
                       '@time': now.strftime('%H:%M'), '@row': str(number), '@total': str(len(rows))}
-            draft, _ = _validate_draft(merge(template, values))
+            draft, _ = _validate_draft(merge(template, values), allow_image_url=True)
             results.append({'row': number, 'line': row['line'], 'kind': 'ready', 'draft': draft})
         except (ValueError, KeyError, TypeError) as error:
             results.append({'row': number, 'line': row['line'], 'kind': 'error', 'message': str(error)})

@@ -1618,3 +1618,14 @@ details[open] summary > svg:last-child {
 .modal-backdrop > section {
     width: min(100%, 480px);
 }
+.print-panel[hidden] {
+    display: none;
+}
+.bulk-workspace {
+    padding: 16px 0 80px;
+}
+.topbar-actions .button[aria-pressed="true"] {
+    background: #e3edfc;
+    color: #0756b3;
+    border-color: #a8c5ea;
+}

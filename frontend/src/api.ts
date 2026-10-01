@@ -38,6 +38,7 @@ export const draftSchema = z.object({
         z.object({
             kind: z.literal("image"),
             image: imageSchema.nullable(),
+            imageUrl: z.string().optional(),
             caption: z.string(),
             mode: z.enum(["grayscale", "bw", "red"]),
             fit: z.boolean(),

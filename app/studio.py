@@ -72,7 +72,7 @@ def _sizes():
     return supported_labels(model)
 
 
-def _validate_draft(draft):
+def _validate_draft(draft, *, allow_image_url=False):
     if not isinstance(draft, dict):
         raise InputError('Expected a label draft.')
     size = _string(draft.get('sizeId'), 'label size', 32)
@@ -141,6 +141,9 @@ def _validate_draft(draft):
         if content.get('mode') not in ('grayscale', 'bw', 'red'):
             raise InputError('Invalid image mode.')
         _bool(content.get('fit'), 'image fit')
+        if allow_image_url and content.get('imageUrl'):
+            _string(content['imageUrl'], 'image URL', 2000)
+            return draft, None
         image = content.get('image')
         if not isinstance(image, dict):
             raise InputError('Choose an image.')
@@ -521,6 +524,9 @@ def prepare_bulk():
 @bp.route('/api/bulk/print', methods=['POST'])
 def print_bulk():
     data = _body()
+    cut = data.get('cut', 'each')
+    if cut not in ('each', 'end'):
+        raise InputError('Invalid cut option.')
     entries = data.get('drafts')
     if not isinstance(entries, list) or not 1 <= len(entries) <= 100:
         raise InputError('Select 1–100 labels.')
@@ -559,7 +565,7 @@ def print_bulk():
                 if total_pixels > 64_000_000:
                     raise InputError('Batch images are too large. Select fewer labels.')
                 label.generate = lambda rotate=False, image=rendered: image
-                queue.add_label_to_queue(label, True, high_res)
+                queue.add_label_to_queue(label, cut == "each" or number == len(validated), high_res)
             except Exception as error:
                 raise InputError(f'Label {number}: {error}. No labels were sent.')
         try:
@@ -575,3 +581,12 @@ def print_bulk():
             return jsonify(message=f'Printing stopped: {error}. Some labels may have printed. Check the printer before starting another batch.'), 502
         record.write_text(json.dumps({'state': 'complete', 'count': len(entries)}))
         return {'kind': 'simulated' if device == 'simulation' else 'printed', 'copies': len(entries), 'message': 'Batch complete'}
+
+
+@bp.route('/api/bulk/image', methods=['POST'])
+def bulk_image():
+    from app.remote_images import fetch_image
+    try:
+        return fetch_image(_body().get('url'))
+    except Exception as error:
+        raise InputError(f'Could not load image: {error}')

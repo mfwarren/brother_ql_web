@@ -39,13 +39,13 @@ import {
     type PrinterStatus,
     type SavedLabel,
 } from "./api";
-import BulkView from "./BulkView";
+import BulkDataPanel from "./BulkDataPanel";
 import LibraryView from "./LibraryView";
 import PrinterView from "./PrinterView";
 import SettingsView from "./SettingsView";
 import RichTextEditor from "./RichTextEditor";
 
-type Page = "bulk" | "editor" | "library" | "printer" | "settings";
+type Page = "editor" | "library" | "printer" | "settings";
 type Preview =
     | { kind: "empty" }
     | { kind: "pending" }
@@ -65,6 +65,13 @@ export default function App() {
     const [draft, setDraft] = useState<Draft | null>(null);
     const [status, setStatus] = useState<PrinterStatus | null>(null);
     const [layoutOpen, setLayoutOpen] = useState(window.innerWidth >= 1100);
+    const [bulkEnabled, setBulkEnabled] = useState(false);
+    const [bulkPreview, setBulkPreview] = useState<{
+        draft: Draft;
+        row: number;
+    } | null>(null);
+    const [bulkBusy, setBulkBusy] = useState(false);
+    const previewDraft = bulkEnabled ? bulkPreview?.draft : draft;
     const [page, setPage] = useState<Page>("editor");
     const [labels, setLabels] = useState<SavedLabel[]>([]);
     const [followLoadedRoll, setFollowLoadedRoll] = useState(true);
@@ -178,7 +185,12 @@ export default function App() {
     }, [detectedRoll, config, followLoadedRoll, activeId, draft?.sizeId]);
 
     useEffect(() => {
-        if (!draft) return;
+        const draft = previewDraft;
+        if (!draft) {
+            setDisplayedImage(null);
+            setPreview({ kind: "empty" });
+            return;
+        }
         const sequence = ++previewSequence.current;
         const controller = new AbortController();
         const content = draft.content;
@@ -240,7 +252,7 @@ export default function App() {
             window.clearTimeout(timer);
             controller.abort();
         };
-    }, [draft]);
+    }, [previewDraft]);
 
     useEffect(() => {
         const media = window.matchMedia("(min-width: 1100px)");
@@ -412,6 +424,7 @@ export default function App() {
         content({
             ...draft.content,
             image: { name: file.name, mime: file.type, base64: btoa(binary) },
+            imageUrl: undefined,
         });
         setNotice(null);
     }
@@ -438,6 +451,7 @@ export default function App() {
             if (
                 !(event.metaKey || event.ctrlKey) ||
                 page !== "editor" ||
+                bulkEnabled ||
                 document.querySelector("dialog[open]")
             )
                 return;
@@ -578,13 +592,11 @@ export default function App() {
                     <h1 className="document-title">
                         {page === "editor"
                             ? activeName
-                            : page === "bulk"
-                              ? "Bulk print"
-                              : page === "library"
-                                ? "Labels"
-                                : page === "settings"
-                                  ? "Settings"
-                                  : "Printer"}
+                            : page === "library"
+                              ? "Labels"
+                              : page === "settings"
+                                ? "Settings"
+                                : "Printer"}
                     </h1>
                     <div className="topbar-actions">
                         {page === "library" && (
@@ -600,7 +612,11 @@ export default function App() {
                             <>
                                 <button
                                     className="button subtle"
-                                    onClick={() => setPage("bulk")}
+                                    disabled={bulkBusy}
+                                    aria-pressed={bulkEnabled}
+                                    onClick={() => {
+                                        setBulkEnabled(!bulkEnabled);
+                                    }}
                                 >
                                     Bulk
                                 </button>
@@ -670,7 +686,10 @@ export default function App() {
                         <>
                             {page === "editor" && (
                                 <>
-                                    <div className="editor-grid">
+                                    <div
+                                        className="editor-grid"
+                                        inert={bulkBusy}
+                                    >
                                         <section className="editor-panel panel">
                                             <div
                                                 className="content-tabs"
@@ -938,6 +957,51 @@ export default function App() {
                                                 {draft.content.kind ===
                                                     "image" && (
                                                     <>
+                                                        {bulkEnabled && (
+                                                            <label className="field">
+                                                                Image URL or CSV
+                                                                field
+                                                                <input
+                                                                    aria-label="Image URL or CSV field"
+                                                                    placeholder="https://… or {{Photo}}"
+                                                                    value={
+                                                                        draft
+                                                                            .content
+                                                                            .imageUrl ??
+                                                                        ""
+                                                                    }
+                                                                    onChange={(
+                                                                        event,
+                                                                    ) => {
+                                                                        if (
+                                                                            draft
+                                                                                .content
+                                                                                .kind ===
+                                                                            "image"
+                                                                        )
+                                                                            content(
+                                                                                {
+                                                                                    ...draft.content,
+                                                                                    image: null,
+                                                                                    imageUrl:
+                                                                                        event
+                                                                                            .target
+                                                                                            .value,
+                                                                                },
+                                                                            );
+                                                                    }}
+                                                                />
+                                                                <small>
+                                                                    Public HTTPS
+                                                                    PNG or JPEG.
+                                                                    Leave blank
+                                                                    to use the
+                                                                    uploaded
+                                                                    image.
+                                                                </small>
+                                                            </label>
+                                                        )}
+
                                                         <input
                                                             ref={uploadInput}
                                                             className="visually-hidden"
@@ -1481,7 +1545,14 @@ export default function App() {
                                             <section className="preview-panel panel">
                                                 <div className="panel-heading">
                                                     <div>
-                                                        <h2>Preview</h2>
+                                                        <h2>
+                                                            Preview
+                                                            {bulkEnabled &&
+                                                                (bulkPreview
+                                                                    ? " · Row " +
+                                                                      bulkPreview.row
+                                                                    : " · Check data below")}
+                                                        </h2>
                                                     </div>
                                                     <span className="preview-tag">
                                                         <i
@@ -1611,7 +1682,10 @@ export default function App() {
                                                     )}
                                                 </div>
                                             </section>
-                                            <section className="print-panel panel">
+                                            <section
+                                                className="print-panel panel"
+                                                hidden={bulkEnabled}
+                                            >
                                                 {mismatchedPaper && (
                                                     <div
                                                         className="paper-warning"
@@ -1703,13 +1777,16 @@ export default function App() {
                                     </div>
                                 </>
                             )}
-                            {page === "bulk" && (
-                                <BulkView
-                                    initial={draft}
+                            <div hidden={!bulkEnabled || page !== "editor"}>
+                                <BulkDataPanel
+                                    template={draft}
                                     config={config}
-                                    onBack={() => setPage("editor")}
+                                    cut={cut}
+                                    onTemplateChange={setDraft}
+                                    onPreview={setBulkPreview}
+                                    onBusy={setBulkBusy}
                                 />
-                            )}
+                            </div>
                             {page === "library" && (
                                 <LibraryView
                                     labels={labels}

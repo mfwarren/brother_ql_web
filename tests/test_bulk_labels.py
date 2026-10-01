@@ -116,3 +116,17 @@ def test_driver_conversion_failure_prevents_sending(client, monkeypatch):
     response = client.post('/studio/api/bulk/print', json={'jobId': str(uuid.uuid4()), 'drafts': [draft(client)]})
     assert response.status_code == 400
     assert 'No labels were sent' in response.json['message']
+
+
+def test_bulk_uses_shared_cut_setting(client, monkeypatch):
+    from app.labeldesigner.printer import PrinterQueue
+    cuts = []
+    add = PrinterQueue.add_label_to_queue
+    def capture(self, label, cut, high_res):
+        cuts.append(cut)
+        return add(self, label, cut, high_res)
+    monkeypatch.setattr(PrinterQueue, 'add_label_to_queue', capture)
+    result = client.post('/studio/api/bulk/print', json={
+        'jobId': str(uuid.uuid4()), 'drafts': [draft(client), draft(client)], 'cut': 'end'})
+    assert result.status_code == 200
+    assert cuts == [False, True]
