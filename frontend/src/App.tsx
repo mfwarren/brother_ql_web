@@ -70,7 +70,11 @@ export default function App() {
     const [name, setName] = useState("");
     const [search, setSearch] = useState("");
     const [preview, setPreview] = useState<Preview>({ kind: "empty" });
-    const [displayedUrl, setDisplayedUrl] = useState<string | null>(null);
+    const [displayedImage, setDisplayedImage] = useState<{
+        url: string;
+        sizeId: string;
+    } | null>(null);
+    const displayedUrl = displayedImage?.url;
     useEffect(
         () => () => {
             if (displayedUrl) URL.revokeObjectURL(displayedUrl);
@@ -183,7 +187,7 @@ export default function App() {
                   ? !content.code.trim()
                   : !content.image;
         if (empty) {
-            setDisplayedUrl(null);
+            setDisplayedImage(null);
             setPreview({ kind: "empty" });
             return;
         }
@@ -212,7 +216,7 @@ export default function App() {
                         URL.revokeObjectURL(url);
                         return;
                     }
-                    setDisplayedUrl(url);
+                    setDisplayedImage({ url, sizeId: draft.sizeId });
                     setPreview({
                         kind: "ready",
                         url,
@@ -1375,7 +1379,17 @@ export default function App() {
                                                     <span className="dimension">
                                                         {sizeName}
                                                     </span>
-                                                    <div className="label-artwork">
+                                                    <div
+                                                        className={
+                                                            config.sizes.find(
+                                                                (size) =>
+                                                                    size.id ===
+                                                                    displayedImage?.sizeId,
+                                                            )?.fixedSize
+                                                                ? "label-artwork die-cut"
+                                                                : "label-artwork"
+                                                        }
+                                                    >
                                                         {displayedUrl ? (
                                                             <img
                                                                 src={

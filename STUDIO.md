@@ -43,7 +43,7 @@ Open <http://127.0.0.1:8014/studio/>. **Test print** creates a raster job and PN
 Use Node 24 and npm 11.19.0 (the CI toolchain):
 
 ```sh
-git clone --branch modern-interface https://github.com/mfwarren/brother_ql_web.git
+git clone --branch master https://github.com/mfwarren/brother_ql_web.git
 cd brother_ql_web
 npx --yes npm@11.19.0 ci --prefix frontend
 npm run build --prefix frontend
