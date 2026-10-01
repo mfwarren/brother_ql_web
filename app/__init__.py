@@ -38,6 +38,10 @@ def create_app(config_class=Config) -> Flask:
     from app.labeldesigner import bp as labeldesigner_bp
     app.register_blueprint(labeldesigner_bp, url_prefix='/labeldesigner')
 
+    from app import studio_preferences
+    from app.studio import bp as studio_bp
+    app.register_blueprint(studio_bp, url_prefix='/studio')
+
     from app.errors import bp as errors_bp
     app.register_blueprint(errors_bp)
 
@@ -53,6 +57,9 @@ def init_fonts(app: Flask):
         app.logger.error("No fonts found on your system. Please install some.")
         sys.exit(2)
 
+    from app.studio_preferences import font_dir
+    from app.managed_fonts import load_installed
+    load_installed(FONTS, font_dir(app))
     return FONTS
 
 

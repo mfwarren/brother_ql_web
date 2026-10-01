@@ -1,214 +1,60 @@
-# brother_ql_web
+# Label Studio for Brother QL
 
-[![Python tests](https://github.com/DL6ER/brother_ql_web/actions/workflows/ci.yml/badge.svg)](https://github.com/DL6ER/brother_ql_web/actions/workflows/ci.yml) [![CodeQL Advanced](https://github.com/DL6ER/brother_ql_web/actions/workflows/codeql.yml/badge.svg)](https://github.com/DL6ER/brother_ql_web/actions/workflows/codeql.yml) [![Build and Push master to GHCR.io](https://github.com/DL6ER/brother_ql_web/actions/workflows/devcontainer-ghcr.yml/badge.svg)](https://github.com/DL6ER/brother_ql_web/actions/workflows/devcontainer-ghcr.yml)
+Design and print labels from your phone, tablet, or computer. Connect a Brother QL printer to a Raspberry Pi or Linux computer, open Label Studio in your browser, and share the printer with everyone on your local network.
 
-This is a dockerized `python3` web service to print labels on Brother QL label printers.
-The web interface is [responsive](https://en.wikipedia.org/wiki/Responsive_web_design). The CI tests are run using `pytest` in the [latest version of Python](https://hub.docker.com/layers/library/python/3-alpine) for Alpine Linux.
+Make labels for storage bins, mailing addresses, file folders, equipment, guest Wi-Fi, and packages. Save the ones you use often so the next print takes just a few clicks.
 
-There are a lot of forks of the `brother_ql` and `brother_ql_web` repos from [`pklaus/brother_ql`](https://github.com/pklaus/brother_ql).
-This fork tries to support many more printers and provide additional features.
+[Download](https://github.com/mfwarren/brother_ql_web/releases/latest) · [Installation guide](STUDIO.md) · [Report an issue](https://github.com/mfwarren/brother_ql_web/issues)
 
-Additional printer support comes from [`matmair/brother_ql-inventree`](https://github.com/matmair/brother_ql-inventree) as a dependency for communicating with the printers and [`tbnobody/brother_ql_web`](https://github.com/tbnobody/brother_ql_web) as a base for the frontend as there have been a few fixes and improvements implemented over there. This fork also builds on enhancements from [`dersimn/brother_ql_web`](https://github.com/dersimn/brother_ql_web) and [`davidramiro/brother_ql_web`](https://github.com/davidramiro/brother_ql_web) for which we are grateful, too.
+![Label Studio desktop editor](docs/design/desktop.png)
 
-## Screenshots
+## Make the label you need
 
-### Barcode with text
+- Mix font families, weights, sizes, bold, italic, and underline within the same label. Select words to format them independently.
+- Add QR codes with captions, upload images, or print the first page of a PDF. Use QR labels for links, equipment identifiers, or Wi-Fi access.
+- Adjust orientation, margins, and text alignment. Center text vertically on fixed-size labels, or let continuous labels grow to fit the content.
+- Check the rendered preview before printing. It stays visible while edits update, so you can keep working without the page jumping around.
+- Choose fonts from Google Fonts or upload TTF/OTF files. Installed fonts stay on the printer host and are available to everyone using the app.
+- Save labels with their formatting and paper settings. Reprint a favorite, duplicate it for a new item, or print several copies at once.
 
-![Barcode](./screenshots/image1.png)
+The advanced editor also provides linear barcode generation and template options.
 
-### Label repository
+## Share one printer
 
-![Label repository](./screenshots/image2.png)
+Label Studio runs on a computer connected to your printer. Everyone else uses a browser, with no printer-driver installation needed on their phone or laptop. The interface adapts to desktop, tablet, and phone screens, with print controls close at hand.
 
-### Image with auto-fit
+On the QL-800, the app detects the loaded roll's width, die-cut length, and black-only or black/red media. New labels can follow the loaded roll automatically. Saved labels keep their own paper settings, and the app checks for a mismatch before printing.
 
-![Image with auto-fit](./screenshots/image3.png)
+Set shared defaults for fonts, label size, orientation, and margins in Settings. A searchable Brother DK roll catalog helps you find the right paper profile.
 
-### Supported barcodes
+| Tablet | Phone |
+| --- | --- |
+| ![Tablet editor](docs/design/ipad.png) | ![Phone editor](docs/design/phone.png) |
 
-![Supported barcodes](./screenshots/image4.png)
+## Start with an example
 
-### Native dark mode
+Nine sample labels give you a starting point, including storage labels, mailing addresses, visitor badges, QR tags, handling arrows, and a red Fragile label. Open a sample, replace the example content, check the paper settings, and print.
 
-![Native dark mode](./screenshots/image6.png)
+| Storage bin | QR asset tag | Mailing address |
+| --- | --- | --- |
+| ![Storage label](docs/samples/text.png) | ![QR label](docs/samples/qr.png) | ![Address label](docs/samples/mailing-address.png) |
 
-### Template support
+Black/red printing requires a compatible printer and black/red label roll. The Fragile sample is configured for that stock.
 
-![Template support](./screenshots/image7.png)
+## Get started
 
-### UTF-8 symbol picker
+1. [Download the latest release](https://github.com/mfwarren/brother_ql_web/releases/latest). Choose the `label-studio` archive, which includes the built web interface.
+2. Follow the [installation guide](STUDIO.md) on your Raspberry Pi or Linux computer. You can try the simulator before connecting a printer.
+3. Connect your printer, open Label Studio in a browser, and check the Printer page. Choose a sample or create your first label.
 
-![UTF-8 symbol picker](./screenshots/image8.png)
+For a printer host that starts automatically and serves the app on port 80, follow the [Raspberry Pi service guide](deploy/README.md).
 
-## New Features
+Label Studio is intended for a trusted home or workspace network. It has no user accounts; anyone who can reach the app can print and change its settings. Keep it off the public internet.
 
-- Automatic printer and label detection (limited detection for network printers, see below)
-- Multi-printer support
-- Convenient label repository (save, load, edit and print labels easily)
-- Support for more printers via `brother_ql-inventree` (**new**)
-  - QL-500
-  - QL-550
-  - QL-560
-  - QL-570
-  - QL-580N
-  - **QL-600**
-  - QL-650TD
-  - QL-700
-  - QL-710W
-  - QL-720NW
-  - QL-800
-  - QL-810W
-  - QL-820NWB
-  - QL-1050
-  - QL-1060N
-  - **QL-1100**
-  - **QL-1110NWB**
-  - **QL-1115NWB**
-- High-resolution (600dpi) printing support
-- Support individual fonts/sizes and spacing for each line of text
-- Dynamic content replacement using templates (e.g., `{{datetime}}`, `{{counter}}`)
-- Import and export of labels in an easily editable format (JSON)
-- Allow text inversion for emphasized text even without color
-- Auto-fit images onto the labels to avoid cropping
-- Arbitrary scaling of images with interpolation
-- Arbitrary rotation of images with interpolation
-- Automatic crop of images to the actual content to avoid unnecessary white space
-- Support for TODO list creation (tickable checkboxes)
-- Allow text together with images
-- Print text as QR Code or barcode
-- Support for a wide range of barcodes (CODABAR, CODE128, CODE39, EAN, EAN13, EAN13-GUARD, EAN14, EAN8, EAN8-GUARD, GS1, GS1-128, GTIN, ISBN, ISBN10, ISBN13, ISSN, ITF, JAN, NW-7, PZN, UPC, UPC-A, QR)
-  - Add text to QR Code
-  - Change size of QR Code
-- Upload files to print
-  - PDF files
-  - A larger number of image formats (PNG, JPG, JPEG, GIF, WEBP, AVIF, WMF, EPS, PS, BMP, GBR, ICB, FITS, PCX, TGA, PBM, FTU, VDA, PPM, VST, ICO, CUR, AVIFS, PGM, JPX, RAS, XPM, J2K, MPEG, IM, JPE, PNM, GRIB, TIF, PXR, RGBA, JP2, PFM, FTC, JFIF, JPC, JPF, BUFR, IIM, MPG, APNG, DDS, HDF, XBM, PSD, J2C, DIB, PCD, SGI, MSP, ICNS, FIT, H5, FLC, BW, QOI, DCX, RGB, BLP, TIFF, EMF, FLI)
-  - automatically convertion to black/white image
-- Change print color for black/white/red labels
-- Support borders (multi-color, also with rounded edges)
-- Print labels multiple times
-  - Cut every label
-  - Cut only after the last label
-- Better error handling
-- Native dark mode
-- A status icon indicating the current status
-  - no color = idle
-  - gray = busy
-  - green = printing successful
-  - red = error needing your attention
-- Migrated GUI to Bootstrap 5
-- Make preview for round labels... round
-- Print images on red/black paper
-- Dockerized
-- Devcontainer for ease of development/contributing
+## Printer compatibility
 
-### Supported templates
+The tested setup is a Brother QL-800 connected by USB to a Raspberry Pi 3 running Raspberry Pi OS. Printing and media detection have been exercised with 62 mm black-only continuous tape, 62 mm black/red continuous tape, and 29 × 90 mm die-cut labels.
 
-- `{{counter[:<start>]}}` — Inserts the current counter value (automatically increments when printing multiple labels at the same time).
-- `{{datetime:<format>}}` — Inserts the current date and time, e.g. `%H:%M:%S %d.%m.%Y` (see [strftime](https://strftime.org/)).
-- `{{uuid}}` — Inserts a random UUID (Universally Unique Identifier).
-- `{{short-uuid}}` — Inserts a shortened version of a UUID.
-- `{{env:<var>}}` — Inserts the value of the environment variable `<var>`.
-- `{{random[:<len>][:shift]}}` — Inserts a random string of optional length `<len>` (defaulting to 64). The optional `shift` parameter can be used to shift the random string around to fill gaps.
+The driver supports additional Brother QL models, but those have not all been tested with Label Studio. Reports from other printer owners are welcome. Include your model, connection type, and label roll when [opening an issue](https://github.com/mfwarren/brother_ql_web/issues).
 
-## Docker Compose
-
-You may also use the example [`docker-compose.yml`](./docker-compose.yml) file provided in this repository to quickly get started with Docker Compose:
-
-``` yaml
-services:
-  brother_ql_web:
-    image: ghcr.io/dl6er/brother-ql-web:latest
-    # build: . # you may also build the container locally
-    container_name: brother_ql_web
-    restart: always
-    ports:
-      - "8013:8013"
-    devices:
-      - "/dev/usb/lp0:/dev/usb/lp0"
-    volumes:
-      - ./labels:/app/labels
-    environment:
-      - LABEL_DEFAULT_SIZE=62
-      - LABEL_DEFAULT_ORIENTATION=standard
-      - PRINTER_MODEL=QL-800
-      - PRINTER_PRINTER=file:///dev/usb/lp0
-```
-
-Or, if you want to use automatic printer detection:
-
-``` yaml
-services:
-  brother_ql_web:
-    image: ghcr.io/dl6er/brother-ql-web:latest
-    # build: . # you may also build the container locally
-    container_name: brother_ql_web
-    restart: always
-    ports:
-      - "8013:8013"
-    privileged: true
-    network_mode: host
-    volumes:
-      - /dev/usb:/dev/usb
-      - ./labels:/app/labels
-    environment:
-      - LABEL_DEFAULT_SIZE=62
-      - LABEL_DEFAULT_ORIENTATION=standard
-      - PRINTER_MODEL=QL-800
-```
-
-The container will automatically show printers when they become available.
-
-To build the image locally:
-
-```bash
-git clone https://github.com/DL6ER/brother_ql_web.git
-cd brother_ql_web
-docker compose build
-```
-
-### Usage
-
-Once it's running, access the web interface by opening the page with your browser.
-If you run it on your local machine, go to <http://localhost:8013>.
-You will then be forwarded by default to the interactive web gui located at `/labeldesigner`.
-
-All in all, the web server offers:
-
--   a web GUI allowing you to print your labels, and
--   an API.
-
-### Network printer support
-
-Network printers are supported but with some limitations regarding automatic detection and status queries. The printer status is always shown as "Network Printer" for network printers as they do not support the usual USB-based status queries. Automatic detection of network printers is done by scanning the ARP table for devices with known Brother MAC address prefixes, which may not be exhaustive. If you have a Brother network printer that is not detected automatically, you can still add it manually by specifying its IP address in the printer configuration (e.g., `tcp://<IP_ADDRESS>`). Please also open an issue if you have a Brother network printer that is not detected automatically so that we can integrate detection for this model.
-
-### API
-
-All functionality of the web interface is also available via a REST API. Currently, the API is not documented in a separate documentation but can be explored using the web interface when the container is running.
-
-### Contributing / Development
-
-To contribute to this project, follow these steps:
-
-1. Create a [fork in your own namespace](https://github.com/DL6ER/brother_ql_web/fork)
-
-2. Clone the repository:
-   ```bash
-   git clone https://github.com/<your name goes here>/brother_ql_web.git
-   cd brother_ql_web
-   ```
-
-2. Make your changes and test them locally, preferably inside the convenient devcontainer.
-
-3. Submit a pull request with a clear description of your changes.
-
-This project offers a **Development Container** for easy local development. You can right away start coding without worrying about the environment setup using the free and open source IDE [VSCode](https://code.visualstudio.com/). Other editors may be able to utilize the provided Dockerfile for a similar setup. Note that the provided devcontainer does not mount any possibly existing local USB printers for compatibility reasons. You may want to edit `.devcontainer/devcontainer.json` to mount such local devices.
-
-### License
-
-This software is published under the terms of the GPLv3, see the LICENSE file in the repository.
-
-Parts of this package are redistributed software products from 3rd parties. They are subject to different licenses:
-
--   [Bootstrap](https://github.com/twbs/bootstrap), MIT License
--   [Font Awesome](https://github.com/FortAwesome/Font-Awesome), CC BY 4.0 License
--   [jQuery](https://github.com/jquery/jquery), MIT License
+[Contributing](CONTRIBUTING.md) · [GPL-3.0 license](LICENSE)

@@ -1,0 +1,2 @@
+-r requirements-server.txt
+zxing-cpp==3.1.1

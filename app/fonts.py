@@ -1,5 +1,4 @@
 import os
-import random
 import logging
 from fontTools.ttLib import TTFont
 from collections import defaultdict
@@ -11,6 +10,9 @@ class Fonts:
                  default_family: str = 'DejaVu Serif',
                  default_style: str = 'Book',
                  additional_path: str = ''):
+        self.aliases = {}
+        self.variations = {}
+        self.face_metadata = {}
         self.fonts = defaultdict(dict)
         self.default_family = default_family
         self.default_style = default_style
@@ -24,8 +26,8 @@ class Fonts:
             os.path.expanduser('~/.local/share/fonts'), '/Library/Fonts', '/System/Library/Fonts',
             'C:\\Windows\\Fonts'
         ]
-        if len(additional_path) > 0:
-            search_paths.extend(additional_path)
+        if additional_path:
+            search_paths.extend([additional_path] if isinstance(additional_path, str) else additional_path)
 
         font_exts = ('.ttf', '.otf')
         for base_path in search_paths:
@@ -47,6 +49,7 @@ class Fonts:
                                     style = record.toStr()
                                 if family and style:
                                     break
+                            font.close()
                             if family and style:
                                 self.fonts[family][style] = font_path
                         except Exception:
@@ -69,15 +72,12 @@ class Fonts:
                     # Remove the child
                     del self.fonts[other_family]
 
-        # Check if the default family/style is available, if not, pick an
-        # available random one
         if default_family in self.fonts and default_style in self.fonts[default_family]:
             logger.debug(f"Selected the following default font: {default_family}")
-        else:
-            logger.warning('Could not find any of the default fonts. Choosing a random one.')
-            family = random.choice(list(self.fonts.keys()))
-            style = random.choice(list(self.fonts[family].keys()))
-            logger.warning(f'The default font is now set to: {family} ({style})')
+        elif self.fonts:
+            self.default_family = next(iter(self.fonts))
+            self.default_style = sorted(self.fonts[self.default_family])[0]
+            logger.warning('Default font unavailable; using %s (%s)', self.default_family, self.default_style)
 
     def get_default_font(self):
         """Return the default font family and style."""
@@ -107,9 +107,41 @@ class Fonts:
         return bool(self.fonts)
 
     def get_path(self, font: str):
+        font = self.canonical_font(font)
         family_name, style_name = font.split(",", 1)
         if family_name not in self.fonts:
             raise LookupError(f"Unknown font family: {family_name}")
         if style_name not in self.fonts[family_name]:
             raise LookupError(f"Unknown font style: {style_name} for font {family_name}")
         return self.fonts[family_name][style_name]
+
+    def canonical_font(self, font):
+        return self.aliases.get(font, font)
+
+    def get_variations(self, font):
+        return self.variations.get(self.canonical_font(font), ())
+
+    def describe(self, font):
+        font = self.canonical_font(font)
+        if font in self.face_metadata:
+            return self.face_metadata[font]
+        style = font.split(',', 1)[1].lower()
+        return {'weight': 700 if 'bold' in style else 400,
+                'italic': 'italic' in style or 'oblique' in style}
+
+    def styled_face(self, font, bold=False, italic=False):
+        font = self.canonical_font(font)
+        if not bold and not italic:
+            return font
+        family, _ = font.split(',', 1)
+        base = self.describe(font)
+        weight = 700 if bold else base['weight']
+        slanted = italic or base['italic']
+        candidates = [f'{family},{style}' for style in self.fonts[family]]
+        candidates = [key for key in candidates if self.describe(key)['italic'] == slanted]
+        if not candidates:
+            raise ValueError(f'{family} has no italic face installed.')
+        selected = min(candidates, key=lambda key: abs(self.describe(key)['weight'] - weight))
+        if bold and self.describe(selected)['weight'] < 600:
+            raise ValueError(f'{family} has no bold face installed.')
+        return selected

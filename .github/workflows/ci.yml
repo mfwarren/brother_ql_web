@@ -1,8 +1,7 @@
-name: Python tests
+name: Legacy image snapshots
 
 on:
-  push:
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   test:

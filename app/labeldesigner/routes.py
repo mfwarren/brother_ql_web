@@ -5,7 +5,7 @@ import logging
 import barcode
 from io import BytesIO
 from . import bp
-from app import FONTS
+import app as app_module
 from PIL import Image
 from werkzeug.datastructures import FileStorage
 from .printer import PrinterQueue, get_ptr_status
@@ -35,7 +35,7 @@ def index():
     ]
     return render_template(
         'labeldesigner.html',
-        fonts=FONTS.fontlist(),
+        fonts=app_module.FONTS.fontlist(),
         label_sizes=label_sizes,
         debug=debug,
         default_label_size=current_app.config['LABEL_DEFAULT_SIZE'],
@@ -44,8 +44,8 @@ def index():
         default_qr_size=current_app.config['LABEL_DEFAULT_QR_SIZE'],
         default_image_mode=current_app.config['IMAGE_DEFAULT_MODE'],
         default_bw_threshold=current_app.config['IMAGE_DEFAULT_BW_THRESHOLD'],
-        default_font_family=FONTS.get_default_font()[0],
-        default_font_style=FONTS.get_default_font()[1],
+        default_font_family=app_module.FONTS.get_default_font()[0],
+        default_font_style=app_module.FONTS.get_default_font()[1],
         line_spacings=LINE_SPACINGS,
         default_line_spacing=current_app.config['LABEL_DEFAULT_LINE_SPACING'],
         default_dpi=DEFAULT_DPI,
@@ -329,7 +329,7 @@ def repo_print():
             label = create_label_from_request(data, {}, i)
             cut = not cut_once or (cut_once and i == print_count - 1)
             printer.add_label_to_queue(label, cut, high_res)
-        status = printer.process_queue()
+        status = _process_legacy_queue(printer)
     except Exception as e:
         current_app.logger.exception(e)
         return make_response(jsonify({'success': False, 'message': str(e)}), 400)
@@ -380,7 +380,13 @@ def preview_from_image():
 
 @bp.route('/api/printer_status', methods=['GET'])
 def get_printer_status():
-    return get_ptr_status(current_app.config)
+    if current_app.config['PRINTER_PRINTER'] == 'simulation':
+        return get_ptr_status(current_app.config)
+    from app.studio import _printer_lock
+    with _printer_lock() as acquired:
+        if not acquired:
+            return {'status_type': 'Busy', 'errors': [], 'printers': [], 'selected': None}
+        return get_ptr_status(current_app.config)
 
 
 @bp.route('/api/print', methods=['POST', 'GET'])
@@ -418,7 +424,7 @@ def print_label():
             # - we cut only once and this is the last label to be generated
             cut = not cut_once or (cut_once and i == print_count - 1)
             printer.add_label_to_queue(label, cut, high_res)
-        status = printer.process_queue()
+        status = _process_legacy_queue(printer)
     except Exception as e:
         return_dict['message'] = str(e)
         current_app.logger.exception(e)
@@ -442,6 +448,14 @@ def create_printer_from_request(request: Request):
         device_specifier=device,
         label_size=label_size
     )
+
+
+def _process_legacy_queue(printer: PrinterQueue):
+    if printer.device_specifier in ('simulation', '?'):
+        return printer.process_queue()
+    from app.studio import _printer_lock
+    with _printer_lock() as acquired:
+        return printer.process_queue() if acquired else 'Printer busy'
 
 
 def create_label_from_request(d: dict = {}, files: dict = {}, counter: int = 0):
@@ -518,7 +532,7 @@ def create_label_from_request(d: dict = {}, files: dict = {}, counter: int = 0):
         label_content = LabelContent.TEXT_QRCODE
     elif image_mode == 'grayscale':
         label_content = LabelContent.IMAGE_GRAYSCALE
-    elif image_mode == 'red_black':
+    elif image_mode == 'red_and_black':
         label_content = LabelContent.IMAGE_RED_BLACK
     elif image_mode == 'colored':
         label_content = LabelContent.IMAGE_COLORED
@@ -546,7 +560,8 @@ def create_label_from_request(d: dict = {}, files: dict = {}, counter: int = 0):
             raise ValueError("Font size is required")
         if int(line['size']) < 1:
             raise ValueError("Font size must be at least 1")
-        line['path'] = FONTS.get_path(line.get('font', ''))
+        line['path'] = app_module.FONTS.get_path(line.get('font', ''))
+        line['variations'] = app_module.FONTS.get_variations(line.get('font', ''))
         if len(line.get('text', '')) > 10_000:
             raise ValueError("Text is too long")
 
@@ -828,7 +843,7 @@ def webhook_print():
                 text=[],
             )
             printer.add_label_to_queue(label, cut=True, high_res=high_res)
-        status = printer.process_queue()
+        status = _process_legacy_queue(printer)
     except Exception as e:
         current_app.logger.exception(e)
         return make_response(jsonify({'success': False, 'message': 'Failed to print labels'}), 400)

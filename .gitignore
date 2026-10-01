@@ -116,3 +116,8 @@ venv.bak/
 
 # Simulated label output
 simulated_labels/
+
+frontend/node_modules/
+frontend/*.tsbuildinfo
+.local-fonts/
+app/static/studio/

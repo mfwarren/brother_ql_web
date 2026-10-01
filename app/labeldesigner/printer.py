@@ -19,6 +19,18 @@ DEFAULT_BATCH_SIZE = 5
 
 logger = logging.getLogger(__name__)
 
+
+def query_printer_status(device_specifier, timeout=3.0):
+    if not device_specifier.startswith('file://'):
+        printer = get_printer(device_specifier)
+        try:
+            return get_status(printer)
+        finally:
+            printer.dispose()
+
+    from .usb_transport import query_status
+    return query_status(device_specifier, timeout)
+
 # Experimentally identified MAC address prefixes for Brother network printers
 # (may not be exhaustive)
 BROTHER_MAC_ADDRESS_PREFIXES = [
@@ -70,7 +82,7 @@ class PrinterQueue:
             )
         return qlr, generated_images
 
-    def _send_raster(self, qlr, generated_images, batch_index=0) -> str:
+    def _send_raster(self, qlr, generated_images, batch_index=0, expected_jobs=1) -> str:
         """Send rasterized data to the printer or simulator.
         Returns an empty string on success, or an error message."""
         try:
@@ -89,7 +101,11 @@ class PrinterQueue:
             network_printer = isinstance(self.device_specifier, str) and self.device_specifier.startswith('tcp://')
             logger.info("Sending %d bytes to printer at %s (batch %d)",
                         len(qlr.data), self.device_specifier, batch_index)
-            info = send(qlr.data, self.device_specifier)
+            if self.device_specifier.startswith('file://'):
+                from .usb_transport import send_raster
+                info = send_raster(self.device_specifier, qlr.data, timeout=90 * expected_jobs, expected_jobs=expected_jobs)
+            else:
+                info = send(qlr.data, self.device_specifier)
             logger.info('Sent %d bytes to printer %s', len(qlr.data), self.device_specifier)
             if network_printer:
                 logger.info('Network printer does not provide status information.')
@@ -124,7 +140,7 @@ class PrinterQueue:
             logger.info('Processing batch %d (%d labels, %d/%d)',
                         batch_index, len(batch), start + len(batch), total)
             qlr, generated_images = self._rasterize_entries(batch)
-            status = self._send_raster(qlr, generated_images, batch_index)
+            status = self._send_raster(qlr, generated_images, batch_index, expected_jobs=len(batch))
             if status:
                 return status
 
@@ -203,6 +219,8 @@ def get_ptr_status(config: Config):
         "text_color": "",
         "red_support": False
     }
+    if device_specifier == 'simulation':
+        return {'printers': [SIMULATOR_PRINTER], 'selected': 'simulation', **SIMULATOR_PRINTER}
     try:
         # If device_specifier is the default '?', try to auto-detect multiple printers
         if device_specifier == '?':
@@ -217,8 +235,7 @@ def get_ptr_status(config: Config):
                         continue
                     spec = f"file://{dev}"
                     try:
-                        printer = get_printer(spec)
-                        printer_state = get_status(printer)
+                        printer_state = query_printer_status(spec)
                         printer_state.setdefault('path', spec)
                         found_list.append(printer_state)
                         logger.debug('Found compatible printer at %s -> %s', spec, printer_state.get('model'))
@@ -284,8 +301,7 @@ def get_ptr_status(config: Config):
             status['selected'] = device_specifier
             return status
         else:
-            printer = get_printer(device_specifier)
-            printer_state = get_status(printer)
+            printer_state = query_printer_status(device_specifier)
             for key, value in printer_state.items():
                 status[key] = value
         # Always include simulator in returned printers list
