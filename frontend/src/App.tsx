@@ -39,12 +39,13 @@ import {
     type PrinterStatus,
     type SavedLabel,
 } from "./api";
+import BulkView from "./BulkView";
 import LibraryView from "./LibraryView";
 import PrinterView from "./PrinterView";
 import SettingsView from "./SettingsView";
 import RichTextEditor from "./RichTextEditor";
 
-type Page = "editor" | "library" | "printer" | "settings";
+type Page = "bulk" | "editor" | "library" | "printer" | "settings";
 type Preview =
     | { kind: "empty" }
     | { kind: "pending" }
@@ -577,11 +578,13 @@ export default function App() {
                     <h1 className="document-title">
                         {page === "editor"
                             ? activeName
-                            : page === "library"
-                              ? "Labels"
-                              : page === "settings"
-                                ? "Settings"
-                                : "Printer"}
+                            : page === "bulk"
+                              ? "Bulk print"
+                              : page === "library"
+                                ? "Labels"
+                                : page === "settings"
+                                  ? "Settings"
+                                  : "Printer"}
                     </h1>
                     <div className="topbar-actions">
                         {page === "library" && (
@@ -595,6 +598,12 @@ export default function App() {
                         )}
                         {page === "editor" && (
                             <>
+                                <button
+                                    className="button subtle"
+                                    onClick={() => setPage("bulk")}
+                                >
+                                    Bulk
+                                </button>
                                 <button
                                     className="button subtle new-action"
                                     onClick={newLabel}
@@ -1693,6 +1702,13 @@ export default function App() {
                                         </div>
                                     </div>
                                 </>
+                            )}
+                            {page === "bulk" && (
+                                <BulkView
+                                    initial={draft}
+                                    config={config}
+                                    onBack={() => setPage("editor")}
+                                />
                             )}
                             {page === "library" && (
                                 <LibraryView

@@ -120,6 +120,11 @@ class PrinterQueue:
             logger.exception("Exception during sending to printer (batch %d): %s", batch_index, e)
             return f"Exception during sending to printer (batch {batch_index}): {e}"
 
+    def validate_queue(self):
+        """Check raster conversion for every label before sending anything."""
+        for entry in self._print_queue:
+            self._rasterize_entries([entry])
+
     def process_queue(self, batch_size: int = 0) -> str:
         if not self._print_queue:
             logger.warning("Print queue is empty.")

@@ -202,7 +202,9 @@ def _render(draft, image_bytes):
         return render_label(draft)
     from app.labeldesigner.routes import create_label_from_request
     values, files = _to_upstream(draft, image_bytes)
-    return create_label_from_request(values, files)
+    label = create_label_from_request(values, files)
+    label.expand_templates = False
+    return label
 
 
 def _repo_dir():
@@ -505,3 +507,71 @@ def delete_label(label_id):
     except FileNotFoundError:
         return jsonify(message='Label not found'), 404
     return {'success': True}
+
+
+@bp.route('/api/bulk/prepare', methods=['POST'])
+def prepare_bulk():
+    from app.bulk_labels import prepare
+    try:
+        return prepare(_body())
+    except ValueError as error:
+        raise InputError(str(error))
+
+
+@bp.route('/api/bulk/print', methods=['POST'])
+def print_bulk():
+    data = _body()
+    entries = data.get('drafts')
+    if not isinstance(entries, list) or not 1 <= len(entries) <= 100:
+        raise InputError('Select 1–100 labels.')
+    try:
+        job_id = str(uuid.UUID(data.get('jobId', '')))
+    except (ValueError, TypeError, AttributeError):
+        raise InputError('Invalid batch ID.')
+    validated = [_validate_draft(entry) for entry in entries]
+    paper = {(draft['sizeId'], draft['highRes']) for draft, _ in validated}
+    if len(paper) != 1:
+        raise InputError('All labels in a batch must use the same paper and resolution.')
+    device = _device()
+    with _printer_lock() as acquired:
+        if not acquired:
+            return jsonify(message='Printer busy. No labels were sent.'), 409
+        jobs = _repo_dir().parent / 'bulk-jobs'
+        jobs.mkdir(exist_ok=True)
+        record = jobs / (job_id + '.json')
+        if record.exists():
+            return jsonify(message='This batch was already submitted. Check the printed labels before starting another batch.'), 409
+        size, high_res = next(iter(paper))
+        if device != 'simulation':
+            state = _status_locked(device, size)
+            if state['state'] != 'ready':
+                return jsonify(message=state['message']), 503
+            if size == '62red' and state.get('mediaColor') != 'black-red':
+                raise InputError('Load detected black/red tape before bulk printing.')
+        queue = PrinterQueue(current_app.config['PRINTER_MODEL'], device, size)
+        # Render the entire batch before the first label can be sent.
+        total_pixels = 0
+        for number, (draft, image_bytes) in enumerate(validated, 1):
+            try:
+                label = _render(draft, image_bytes)
+                rendered = label.generate(rotate=False)
+                total_pixels += rendered.width * rendered.height
+                if total_pixels > 64_000_000:
+                    raise InputError('Batch images are too large. Select fewer labels.')
+                label.generate = lambda rotate=False, image=rendered: image
+                queue.add_label_to_queue(label, True, high_res)
+            except Exception as error:
+                raise InputError(f'Label {number}: {error}. No labels were sent.')
+        try:
+            queue.validate_queue()
+        except Exception as error:
+            raise InputError(f'Printer conversion failed: {error}. No labels were sent.')
+        record.write_text(json.dumps({'state': 'submitted', 'count': len(entries)}))
+        try:
+            error = queue.process_queue()
+            if error:
+                raise RuntimeError(error)
+        except Exception as error:
+            return jsonify(message=f'Printing stopped: {error}. Some labels may have printed. Check the printer before starting another batch.'), 502
+        record.write_text(json.dumps({'state': 'complete', 'count': len(entries)}))
+        return {'kind': 'simulated' if device == 'simulation' else 'printed', 'copies': len(entries), 'message': 'Batch complete'}

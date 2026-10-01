@@ -11,6 +11,7 @@ Make labels for storage bins, mailing addresses, file folders, equipment, guest 
 ## Make the label you need
 
 - Mix font families, weights, sizes, bold, italic, and underline within the same label. Select words to format them independently.
+- Merge CSV data into text, QR, barcode, and image-caption templates. Preview up to 100 labels, fix row errors, and print selected rows. [Bulk printing guide](docs/bulk-printing.md).
 - Create Code 128, EAN-13, EAN-8, and UPC-A barcodes with optional captions. Retail check digits are calculated and validated automatically.
 - Add QR codes with captions, upload images, or print the first page of a PDF. Use QR labels for links, equipment identifiers, or Wi-Fi access.
 - Adjust orientation, margins, and text alignment. Center text vertically on fixed-size labels, or let continuous labels grow to fit the content.

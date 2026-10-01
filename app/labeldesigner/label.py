@@ -96,6 +96,7 @@ class SimpleLabel:
         self._border_color = border_color
         self._counter = counter
         self._timestamp = timestamp
+        self.expand_templates = True
         self._red_support = red_support
         self._code_text = code_text
 
@@ -174,6 +175,8 @@ class SimpleLabel:
     def process_templates(self) -> None:
         """Process and replace templates in the text lines."""
         self.text = copy.deepcopy(self.input_text)
+        if not self.expand_templates:
+            return
         for line in self.text:
             text_val = line.get('text', '')
             if len(text_val) > WARNING_TEXT_LENGTH:
