@@ -285,6 +285,8 @@ class SimpleLabel:
                         # Both dimensions are considered for standard label
                         scale = min(max_width / img_width, max_height / img_height)
                 logger.debug(f"Scaling image by factor: {scale}")
+                if self._label_content in (LabelContent.QRCODE_ONLY, LabelContent.TEXT_QRCODE) and self.barcode_type != 'QR':
+                    scale = 1.0
                 new_size = (int(img_width * scale), int(img_height * scale))
                 logger.debug(f"Resized image size: {new_size} px")
                 img = img.resize(new_size, Image.Resampling.LANCZOS)
@@ -425,7 +427,16 @@ class SimpleLabel:
             # Take value from the first line of text
             value = self.text[0].get('text', '') if self.text and self.text[0].get('text', '') else ''
         my_barcode = barcode_generator(value, writer=ImageWriter())
-        return my_barcode.render()
+        available = self._width - self._label_margin[0] - self._label_margin[1]
+        if self._label_orientation == LabelOrientation.ROTATED and self._label_type == LabelType.ENDLESS_LABEL:
+            available = 1200
+        modules = len(my_barcode.build()[0]) + 20
+        pixels = min(3, available // modules)
+        if pixels < 2:
+            raise ValueError('Barcode is too wide for this label. Use a shorter value, wider paper, or change orientation.')
+        module_mm = pixels * 25.4 / 300
+        return my_barcode.render({'module_width': module_mm, 'quiet_zone': module_mm * 10,
+                                  'module_height': 8, 'font_size': 8})
 
     def _generate_qr(self):
         qr = QRCode(

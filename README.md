@@ -11,13 +11,14 @@ Make labels for storage bins, mailing addresses, file folders, equipment, guest 
 ## Make the label you need
 
 - Mix font families, weights, sizes, bold, italic, and underline within the same label. Select words to format them independently.
+- Create Code 128, EAN-13, EAN-8, and UPC-A barcodes with optional captions. Retail check digits are calculated and validated automatically.
 - Add QR codes with captions, upload images, or print the first page of a PDF. Use QR labels for links, equipment identifiers, or Wi-Fi access.
 - Adjust orientation, margins, and text alignment. Center text vertically on fixed-size labels, or let continuous labels grow to fit the content.
 - Check the rendered preview before printing. It stays visible while edits update, so you can keep working without the page jumping around.
 - Choose fonts from Google Fonts or upload TTF/OTF files. Installed fonts stay on the printer host and are available to everyone using the app.
 - Save labels with their formatting and paper settings. Reprint a favorite, duplicate it for a new item, or print several copies at once.
 
-The advanced editor also provides linear barcode generation and template options.
+The advanced editor also provides template options.
 
 ## Share one printer
 

@@ -18,6 +18,7 @@ import {
     Plus,
     Printer,
     QrCode,
+    Barcode,
     RotateCw,
     Settings2,
     Tag,
@@ -183,7 +184,7 @@ export default function App() {
         const empty =
             content.kind === "text"
                 ? !content.text.trim()
-                : content.kind === "qr"
+                : content.kind === "qr" || content.kind === "barcode"
                   ? !content.code.trim()
                   : !content.image;
         if (empty) {
@@ -267,15 +268,17 @@ export default function App() {
             saved ??
                 (kind === "text"
                     ? { kind, text: "" }
-                    : kind === "qr"
-                      ? { kind, code: "", caption: "" }
-                      : {
-                            kind,
-                            image: null,
-                            caption: "",
-                            mode: "grayscale",
-                            fit: true,
-                        }),
+                    : kind === "barcode"
+                      ? { kind, code: "", caption: "", format: "code128" }
+                      : kind === "qr"
+                        ? { kind, code: "", caption: "" }
+                        : {
+                              kind,
+                              image: null,
+                              caption: "",
+                              mode: "grayscale",
+                              fit: true,
+                          }),
         );
     }
     function notify(text: string, error = false) {
@@ -690,6 +693,19 @@ export default function App() {
                                                     QR code
                                                 </button>
                                                 <button
+                                                    type="button"
+                                                    aria-pressed={
+                                                        draft.content.kind ===
+                                                        "barcode"
+                                                    }
+                                                    onClick={() =>
+                                                        changeKind("barcode")
+                                                    }
+                                                >
+                                                    <Barcode size={18} />
+                                                    Barcode
+                                                </button>
+                                                <button
                                                     aria-pressed={
                                                         draft.content.kind ===
                                                         "image"
@@ -712,6 +728,133 @@ export default function App() {
                                                         size={draft.fontSize}
                                                         fonts={config.fonts}
                                                     />
+                                                )}
+                                                {draft.content.kind ===
+                                                    "barcode" && (
+                                                    <>
+                                                        <label className="field">
+                                                            Barcode type
+                                                            <select
+                                                                aria-label="Barcode type"
+                                                                value={
+                                                                    draft
+                                                                        .content
+                                                                        .format
+                                                                }
+                                                                onChange={(
+                                                                    event,
+                                                                ) => {
+                                                                    const format =
+                                                                        event
+                                                                            .target
+                                                                            .value;
+                                                                    if (
+                                                                        draft
+                                                                            .content
+                                                                            .kind ===
+                                                                            "barcode" &&
+                                                                        (format ===
+                                                                            "code128" ||
+                                                                            format ===
+                                                                                "ean13" ||
+                                                                            format ===
+                                                                                "ean8" ||
+                                                                            format ===
+                                                                                "upca")
+                                                                    )
+                                                                        content(
+                                                                            {
+                                                                                ...draft.content,
+                                                                                format,
+                                                                            },
+                                                                        );
+                                                                }}
+                                                            >
+                                                                <option value="code128">
+                                                                    Code 128 ·
+                                                                    Text and
+                                                                    numbers
+                                                                </option>
+                                                                <option value="ean13">
+                                                                    EAN-13 · 12
+                                                                    or 13 digits
+                                                                </option>
+                                                                <option value="ean8">
+                                                                    EAN-8 · 7 or
+                                                                    8 digits
+                                                                </option>
+                                                                <option value="upca">
+                                                                    UPC-A · 11
+                                                                    or 12 digits
+                                                                </option>
+                                                            </select>
+                                                        </label>
+                                                        <label className="field">
+                                                            Barcode value
+                                                            <input
+                                                                aria-label="Barcode value"
+                                                                value={
+                                                                    draft
+                                                                        .content
+                                                                        .code
+                                                                }
+                                                                maxLength={80}
+                                                                placeholder="SKU-0042"
+                                                                onChange={(
+                                                                    event,
+                                                                ) => {
+                                                                    if (
+                                                                        draft
+                                                                            .content
+                                                                            .kind ===
+                                                                        "barcode"
+                                                                    )
+                                                                        content(
+                                                                            {
+                                                                                ...draft.content,
+                                                                                code: event
+                                                                                    .target
+                                                                                    .value,
+                                                                            },
+                                                                        );
+                                                                }}
+                                                            />
+                                                        </label>
+                                                        <label className="field">
+                                                            Caption{" "}
+                                                            <span className="optional">
+                                                                optional
+                                                            </span>
+                                                            <input
+                                                                aria-label="Barcode caption"
+                                                                value={
+                                                                    draft
+                                                                        .content
+                                                                        .caption
+                                                                }
+                                                                placeholder="Product or shelf name"
+                                                                onChange={(
+                                                                    event,
+                                                                ) => {
+                                                                    if (
+                                                                        draft
+                                                                            .content
+                                                                            .kind ===
+                                                                        "barcode"
+                                                                    )
+                                                                        content(
+                                                                            {
+                                                                                ...draft.content,
+                                                                                caption:
+                                                                                    event
+                                                                                        .target
+                                                                                        .value,
+                                                                            },
+                                                                        );
+                                                                }}
+                                                            />
+                                                        </label>
+                                                    </>
                                                 )}
                                                 {draft.content.kind ===
                                                     "qr" && (

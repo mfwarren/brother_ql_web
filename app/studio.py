@@ -1,5 +1,6 @@
 """Small JSON interface for the household label editor."""
 
+import barcode
 import base64
 import binascii
 import fcntl
@@ -102,7 +103,7 @@ def _validate_draft(draft):
         raise InputError('High resolution is unavailable for red media.')
     content = draft.get('content')
     if not isinstance(content, dict):
-        raise InputError('Choose text, QR, or image content.')
+        raise InputError('Choose text, QR, barcode, or image content.')
     kind = content.get('kind')
     image_bytes = None
     if kind == 'text':
@@ -116,6 +117,25 @@ def _validate_draft(draft):
     elif kind == 'qr':
         _string(content.get('code'), 'QR code', 2000)
         _string(content.get('caption'), 'caption', 10000, allow_empty=True)
+    elif kind == 'barcode':
+        value = _string(content.get('code'), 'barcode value', 80)
+        _string(content.get('caption'), 'caption', 10000, allow_empty=True)
+        format = content.get('format')
+        if format not in ('code128', 'ean13', 'ean8', 'upca'):
+            raise InputError('Unknown barcode type.')
+        lengths = {'ean13': 12, 'ean8': 7, 'upca': 11}
+        if format == 'code128':
+            if not all(32 <= ord(char) <= 126 for char in value):
+                raise InputError('Code 128 supports printable ASCII text and numbers.')
+        elif format in lengths:
+            length = lengths[format]
+            if not value.isascii() or not value.isdigit() or len(value) not in (length, length + 1):
+                raise InputError(f'{format.upper()} requires {length} digits, or {length + 1} including its check digit.')
+            encoded = barcode.get_barcode_class(format)(value).get_fullcode()
+            if len(value) == length + 1 and value != encoded:
+                raise InputError('Incorrect barcode check digit.')
+        else:
+            raise InputError('Unknown barcode type.')
     elif kind == 'image':
         _string(content.get('caption'), 'caption', 10000, allow_empty=True)
         if content.get('mode') not in ('grayscale', 'bw', 'red'):
@@ -157,13 +177,15 @@ def _to_upstream(draft, image_bytes):
               'align': draft['align'], 'color': draft['color'], 'line_spacing': '100'}
              for text in line_text.splitlines()]
     values = {'label_size': draft['sizeId'], 'orientation': draft['orientation'],
-              'text': json.dumps(lines), 'print_type': {'text': 'text', 'qr': 'qrcode_text', 'image': 'image'}[kind],
+              'text': json.dumps(lines), 'print_type': {'text': 'text', 'qr': 'qrcode_text', 'barcode': 'qrcode_text', 'image': 'image'}[kind],
               'margin_top': draft['margin'], 'margin_bottom': draft['margin'],
               'margin_left': draft['margin'], 'margin_right': draft['margin'],
               'high_res': int(draft['highRes']), 'print_color': draft['color'], 'border_thickness': 0}
     files = {}
-    if kind == 'qr':
-        values.update(barcode_type='QR', code_text=content['code'])
+    if kind in ('qr', 'barcode'):
+        values.update(barcode_type='QR' if kind == 'qr' else content['format'], code_text=content['code'])
+    if kind == 'barcode':
+        values.update(image_crop=0)
     if kind == 'image':
         values.update(image_mode={'grayscale': 'grayscale', 'bw': 'bw', 'red': 'red_and_black'}[content['mode']],
                       image_fit=int(content['fit']))

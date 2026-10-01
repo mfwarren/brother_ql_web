@@ -30,6 +30,12 @@ export const draftSchema = z.object({
             caption: z.string(),
         }),
         z.object({
+            kind: z.literal("barcode"),
+            code: z.string(),
+            caption: z.string(),
+            format: z.enum(["code128", "ean13", "ean8", "upca"]),
+        }),
+        z.object({
             kind: z.literal("image"),
             image: imageSchema.nullable(),
             caption: z.string(),
@@ -264,6 +270,8 @@ export function labelTitle(content: Content): string {
             }
         }
     }
+    if (content.kind === "barcode")
+        title = content.caption.trim() || content.code.trim();
     if (content.kind === "image")
         title =
             content.caption.trim() ||
@@ -273,8 +281,10 @@ export function labelTitle(content: Content): string {
         title.replace(/\s+/g, " ").slice(0, 80) ||
         (content.kind === "qr"
             ? "QR label"
-            : content.kind === "image"
-              ? "Image label"
-              : "Text label")
+            : content.kind === "barcode"
+              ? "Barcode label"
+              : content.kind === "image"
+                ? "Image label"
+                : "Text label")
     );
 }

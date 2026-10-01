@@ -8,7 +8,7 @@ def test_first_install_samples_render_and_print_in_simulator(client):
     client.application.config['STUDIO_SEED_SAMPLES'] = True
     labels = client.get('/studio/api/labels').json['labels']
     assert len(labels) == 9
-    assert {label['draft']['content']['kind'] for label in labels} == {'text', 'qr', 'image'}
+    assert {label['draft']['content']['kind'] for label in labels} == {'text', 'qr', 'barcode', 'image'}
     for label in labels:
         assert label['draft']['sizeId'] == ('62red' if label['name'] == 'Fragile · Black/red tape' else '62')
         assert_png(client.post('/studio/api/preview', json=label['draft']))

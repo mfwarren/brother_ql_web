@@ -10,7 +10,6 @@ def starter_labels(fonts, default_font):
             'fontSize': 56, 'align': 'center', 'color': 'black',
             'margin': 24, 'highRes': False}
     image = base64.b64encode((Path(__file__).parent / 'samples' / 'handling.png').read_bytes()).decode('ascii')
-    barcode = base64.b64encode((Path(__file__).parent / 'samples' / 'inventory.png').read_bytes()).decode('ascii')
     fragile = base64.b64encode((Path(__file__).parent / 'samples' / 'fragile.png').read_bytes()).decode('ascii')
     return [
         ('storage-bin', 'Storage bin', {**base, 'content': {
@@ -27,8 +26,8 @@ def starter_labels(fonts, default_font):
         ('visitor-badge', 'Visitor name badge', {**base, 'fontSize': 70, 'content': {
             'kind': 'text', 'text': 'HELLO\nI AM ALEX'}}),
         ('inventory-barcode', 'Inventory · Code 128', {**base, 'fontSize': 38, 'content': {
-            'kind': 'image', 'image': {'name': 'SKU-0042-code128.png', 'mime': 'image/png', 'base64': barcode},
-            'caption': 'SKU-0042  /  USB-C CABLE', 'mode': 'bw', 'fit': True}}),
+            'kind': 'barcode', 'format': 'code128', 'code': 'SKU-0042',
+            'caption': 'USB-C CABLE'}}),
         ('guest-wifi', 'Guest Wi-Fi · QR', {**base, 'fontSize': 30, 'content': {
             'kind': 'qr', 'code': 'WIFI:T:WPA;S:Guest Wi-Fi;P:change-me-123;;',
             'caption': 'GUEST WI-FI\nReplace sample network details'}}),
