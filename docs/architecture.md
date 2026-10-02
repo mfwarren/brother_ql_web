@@ -19,4 +19,4 @@ The Rust server lives in `server/`:
 
 The printer lock covers media checks and submission. Bulk jobs validate every raster before sending anything, and write a submission record before the first send. A failed or interrupted submitted job cannot be retried with the same job ID.
 
-Rendering and driver fixtures test output against the Python implementation. Rust unit tests also cover variable fonts, media detection, USB framing, deadlines, CSV substitution, remote-image address restrictions, and locking. The previous Python implementation is available in Git history. Python is used only by optional development verification, benchmarking, and font-catalog maintenance tools; it is not invoked by the Rust process.
+Rendering and driver fixtures test output against the Python implementation. Rust unit tests also cover variable fonts, media detection, USB framing, deadlines, CSV substitution, remote-image address restrictions, and locking. The previous Python implementation is available in Git history. Python is used only by optional development verification and font-catalog maintenance tools; it is not invoked by the Rust process.

@@ -1,23 +1,18 @@
 #!/usr/bin/env python3
 """Exercise a disposable Label Studio simulation server over HTTP.
 
-Works against either backend. Never run against production: the checks install a
+Never run against production: the checks install a
 font and leave simulation job records. Printing is gated on both configuration
 and live status reporting simulation. Saved test labels and defaults are restored.
 
   python tools/check_rust_api.py --url http://127.0.0.1:8016
-  python tools/check_rust_api.py --url http://127.0.0.1:8015 --capture /tmp/python-renders
-  python tools/check_rust_api.py --url http://127.0.0.1:8016 --compare /tmp/python-renders
 
 Only the standard library is required. Pillow and zxing-cpp, when installed,
-add pixel comparisons and QR/barcode decoding checks. --require-decode makes
-missing decoder dependencies an error. Capture stores drafts and PNGs so reference
-checks still work after removal of the Python application.
+add QR/barcode decoding checks. --require-decode makes
+missing decoder dependencies an error.
 """
 import argparse
 import base64
-import copy
-import hashlib
 import io
 import json
 import struct
@@ -27,7 +22,6 @@ import urllib.parse
 import urllib.request
 import uuid
 import zlib
-from pathlib import Path
 
 
 class Client:
@@ -263,97 +257,13 @@ def check_printing(client, basic):
     print('PASS simulation-only single/bulk printing, cut options, duplicate suppression, mixed-roll rejection')
 
 
-def reference_cases(font):
-    contents = {
-        'plain': {'kind': 'text', 'text': 'Coffee\nbeans'},
-        'rich': {'kind': 'text', 'text': 'Coffee\nbeans', 'paragraphs': [{'runs': [{'text': 'Coffee', 'size': 32, 'underline': True}]}, {'runs': [{'text': 'beans'}]}]},
-        'qr': {'kind': 'qr', 'code': 'https://example.com', 'caption': 'Scan'},
-        'barcode': {'kind': 'barcode', 'format': 'code128', 'code': 'A12', 'caption': 'Stock'},
-        'image': {'kind': 'image', 'image': {'name': 'test.png', 'mime': 'image/png', 'base64': base64.b64encode(sample_image()).decode()}, 'mode': 'grayscale', 'fit': True, 'caption': 'Box'},
-    }
-    for size in ['62', '62x100', '62red']:
-        for orientation in ['standard', 'rotated']:
-            for high_res in [False, True] if size != '62red' else [False]:
-                for kind, content in contents.items():
-                    label = draft(font, copy.deepcopy(content), sizeId=size, orientation=orientation, highRes=high_res, color='red' if size == '62red' else 'black')
-                    if kind == 'rich':
-                        label.update(verticalAlign='top', lineSpacing=150, margins={'left': 30, 'right': 20, 'top': 15, 'bottom': 25})
-                    yield f'{size}-{orientation}-{high_res}-{kind}', label
-
-
-def capture(client, directory):
-    directory.mkdir(parents=True, exist_ok=True)
-    config = client.json('/studio/api/config')
-    font = config['defaultFont']
-    manifest = {'font': font, 'cases': []}
-    for key, label in reference_cases(font):
-        image = client.preview(label)
-        filename = key + '.png'
-        (directory / filename).write_bytes(image)
-        manifest['cases'].append({'key': key, 'draft': label, 'png': filename, 'sha256': hashlib.sha256(image).hexdigest(), 'size': png_size(image)})
-    (directory / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
-    print(f'Captured {len(manifest["cases"])} reference drafts and PNGs in {directory}')
-
-
-def compare(client, directory, allow_qr_mask=False):
-    manifest = json.loads((directory / 'manifest.json').read_text())
-    differences = []
-    exact = pixels_equal = qr_equivalent = 0
-    for case in manifest['cases']:
-        image = client.preview(case['draft'])
-        reference = (directory / case['png']).read_bytes()
-        if image == reference:
-            exact += 1
-            pixels_equal += 1
-            continue
-        mismatch = {'key': case['key'], 'referenceSize': png_size(reference), 'actualSize': png_size(image)}
-        try:
-            from PIL import Image, ImageChops
-            before = Image.open(io.BytesIO(reference)).convert('RGB')
-            after = Image.open(io.BytesIO(image)).convert('RGB')
-            if before.size == after.size:
-                diff = ImageChops.difference(before, after)
-                if diff.getbbox() is None:
-                    pixels_equal += 1
-                    continue
-                pixels = diff.tobytes()
-                mismatch['changedPixels'] = sum(pixels[i:i + 3] != b'\x00\x00\x00' for i in range(0, len(pixels), 3))
-        except ImportError:
-            mismatch['pixelComparison'] = 'Install Pillow to compare independently of PNG encoding'
-        if allow_qr_mask and case['draft']['content']['kind'] == 'qr' and png_size(reference) == png_size(image):
-            import zxingcpp
-            from PIL import Image
-            decoded = [code.text for code in zxingcpp.read_barcodes(Image.open(io.BytesIO(image)))]
-            if case['draft']['content']['code'].strip() in decoded:
-                qr_equivalent += 1
-                continue
-        (directory / ('actual-' + case['png'])).write_bytes(image)
-        differences.append(mismatch)
-    report = {'total': len(manifest['cases']), 'identicalPng': exact, 'identicalPixels': pixels_equal, 'equivalentQrMasks': qr_equivalent, 'differences': differences}
-    (directory / 'comparison.json').write_text(json.dumps(report, indent=2) + '\n')
-    print(f'Render comparison: {pixels_equal}/{len(manifest["cases"])} identical pixels, {exact} identical PNG files')
-    print(f'QR encoding differences verified by decoding: {qr_equivalent}')
-    for difference in differences:
-        print('DIFF ' + json.dumps(difference))
-    assert not differences, f'Render differences saved to {directory / "comparison.json"}'
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--url', required=True)
-    parser.add_argument('--capture', type=Path)
-    parser.add_argument('--compare', type=Path)
-    parser.add_argument('--render-only', action='store_true', help='Only capture/compare previews; do not run mutating API checks')
     parser.add_argument('--require-decode', action='store_true')
-    parser.add_argument('--allow-qr-mask', action='store_true', help='Accept a different QR mask only when dimensions and machine-decoded contents match')
     args = parser.parse_args()
     client = Client(args.url)
-    if not args.render_only:
-        check_api(client, args.require_decode)
-    if args.capture:
-        capture(client, args.capture)
-    if args.compare:
-        compare(client, args.compare, args.allow_qr_mask)
+    check_api(client, args.require_decode)
     print(f'PASS {client.requests} HTTP requests against {args.url}')
 
 
