@@ -196,7 +196,25 @@ async fn index(State(s): State<AppState>) -> ApiResult<Response> {
     Ok(([(header::CONTENT_TYPE, "text/html")], bytes).into_response())
 }
 async fn config_get(State(s): State<AppState>) -> ApiResult<Json<Value>> {
-    blocking(move||{let f=registry(&s)?;let d=defaults(&s,&f)?;Ok(Json(json!({"model":s.config.model,"fonts":f.list(),"sizes":media::sizes(&s.config.model),"defaultFont":d["font"],"defaultSize":d["sizeId"],"defaults":d,"mode":if s.config.printer=="simulation"{"simulation"}else{"physical"}})))}).await
+    blocking(move || {
+        let fonts = registry(&s)?;
+        let defaults = defaults(&s, &fonts)?;
+        let mode = if s.config.printer == "simulation" {
+            "simulation"
+        } else {
+            "physical"
+        };
+        Ok(Json(json!({
+            "model": s.config.model,
+            "fonts": fonts.list(),
+            "sizes": media::sizes(&s.config.model),
+            "defaultFont": defaults["font"],
+            "defaultSize": defaults["sizeId"],
+            "defaults": defaults,
+            "mode": mode,
+        })))
+    })
+    .await
 }
 async fn status(State(s): State<AppState>) -> ApiResult<Json<Value>> {
     blocking(move || printer::status(&s.config).map(Json)).await
@@ -298,7 +316,41 @@ async fn delete(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<
     Ok(Json(json!({"success":true})))
 }
 async fn settings(State(s): State<AppState>, Json(v): Json<Value>) -> ApiResult<Json<Value>> {
-    blocking(move||{let f=registry(&s)?;f.get(validation::string(&v["font"],"font",200,false)?)?;ensure!(media::sizes(&s.config.model).as_array().unwrap().iter().any(|x|x["id"]==v["sizeId"]),"Choose a supported label roll.");ensure!(v["orientation"]=="standard"||v["orientation"]=="rotated","Choose a valid orientation.");let auto=v.get("autoDetectRoll").cloned().unwrap_or(json!(true));ensure!(auto.is_boolean(),"Automatic roll detection must be on or off.");let d=json!({"font":v["font"],"sizeId":v["sizeId"],"orientation":v["orientation"],"margin":validation::integer(&v["margin"],"Margin",0,100)?,"fontSize":validation::integer(&v["fontSize"],"Font size",8,200)?,"autoDetectRoll":auto});storage::write_json(&s.config.data_dir.join("settings.json"),&json!({"version":1,"defaults":d}))?;Ok(Json(json!({"defaults":d})))}).await
+    blocking(move || {
+        let fonts = registry(&s)?;
+        fonts.get(validation::string(&v["font"], "font", 200, false)?)?;
+        ensure!(
+            media::sizes(&s.config.model)
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|size| size["id"] == v["sizeId"]),
+            "Choose a supported label roll."
+        );
+        ensure!(
+            v["orientation"] == "standard" || v["orientation"] == "rotated",
+            "Choose a valid orientation."
+        );
+        let auto_detect = v.get("autoDetectRoll").cloned().unwrap_or(json!(true));
+        ensure!(
+            auto_detect.is_boolean(),
+            "Automatic roll detection must be on or off."
+        );
+        let defaults = json!({
+            "font": v["font"],
+            "sizeId": v["sizeId"],
+            "orientation": v["orientation"],
+            "margin": validation::integer(&v["margin"], "Margin", 0, 100)?,
+            "fontSize": validation::integer(&v["fontSize"], "Font size", 8, 200)?,
+            "autoDetectRoll": auto_detect,
+        });
+        storage::write_json(
+            &s.config.data_dir.join("settings.json"),
+            &json!({"version": 1, "defaults": defaults}),
+        )?;
+        Ok(Json(json!({"defaults": defaults})))
+    })
+    .await
 }
 async fn prepare(State(s): State<AppState>, Json(v): Json<Value>) -> ApiResult<Json<Value>> {
     blocking(move || bulk::prepare(&v, &s.config, &registry(&s)?).map(Json)).await

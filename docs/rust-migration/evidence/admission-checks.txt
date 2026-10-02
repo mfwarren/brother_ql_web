@@ -1,1 +1,0 @@
-PASS four concurrent incomplete 8 MiB requests hold admission slots; further API requests receive HTTP 503 with Retry-After, static UI stays available, and stalled uploads time out without client disconnection

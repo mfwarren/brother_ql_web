@@ -6,7 +6,7 @@ The QL-800 tested on 2026-09-28 accepted a Linux-only change from 60 minutes to 
 
 The Rust server binary includes a settings command for `/dev/usb/lp0`. The printer must be powered on, idle, and in normal USB printer mode.
 
-Stop any printing service that does not share the Studio lock before running it. In particular, the recovered legacy `brother_ql_web.service` does not honor that lock. Restore services afterward, including if the utility fails. Do not run this concurrently with CUPS, another driver, or another printer-settings utility.
+Stop any printing service that does not share the Studio lock before running it. Restore services afterward, including if the utility fails. Do not run this concurrently with CUPS, another driver, or another printer-settings utility.
 
 ```sh
 LABEL_STUDIO_CONFIG=/etc/label-studio/application.json label-studio-server power-get
@@ -29,7 +29,7 @@ We tested only the auto-power-off selector on a QL-800 with USB ID `04f9:209b`:
 | Read auto power-off | `1b 69 55 41 01` |
 | Set disabled | `1b 69 55 41 00 00` |
 
-The settings reply is 32 bytes, starts `80 20 42 34 38 30`, has status type `f0` at offset 18, value at offset 30, and acknowledgement `01` at offset 31. The observed value changed from `06` to `00` at 2026-09-28 23:57 UTC. Values encode ten-minute units. Raw before/after replies are in [the evidence file](power-settings-evidence.json).
+The settings reply is 32 bytes, starts `80 20 42 34 38 30`, has status type `f0` at offset 18, value at offset 30, and acknowledgement `01` at offset 31. Values encode ten-minute units: `06` is 60 minutes and `00` disables automatic shutdown.
 
 A first attempt exposed empty nonblocking reads and stale queued responses. The final transport tolerates transient empty reads, drains queued bytes before a transaction, and bounds all reads and writes. Pseudo-terminal tests cover fragmented replies, stale replies, timeout, and the precise setting write sequence.
 

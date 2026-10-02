@@ -76,4 +76,6 @@ node --experimental-strip-types frontend/title-checks.mjs
 npm run build --prefix frontend
 ```
 
-The migration's reference checks use Python as a development tool only. They do not form part of the running Rust service.
+The optional HTTP checks in `tools/check_rust_api.py`, `tools/check_webhook.py`, and `tools/check_http_admission.py` run against a disposable simulation server. The [CI workflow](.github/workflows/studio.yml) includes the server startup, development dependency installation, and check commands. Python is only a development tool; it is not part of the running Rust service.
+
+The [Pi benchmark report](docs/performance/2026-10-02-pi3.md) includes measured performance and instructions for repeating the comparison.

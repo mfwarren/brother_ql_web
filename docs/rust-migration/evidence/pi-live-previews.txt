@@ -1,3 +1,0 @@
-Render comparison: 8/9 identical pixels, 0 identical PNG files
-QR encoding differences verified by decoding: 1
-PASS 9 HTTP requests against http://labels.local
