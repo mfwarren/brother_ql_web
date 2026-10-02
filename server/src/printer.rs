@@ -577,10 +577,74 @@ fn record(path: &std::path::Path, value: Value) -> Result<()> {
     tmp.persist(path)?;
     Ok(())
 }
+pub fn print_copies(
+    config: &Config,
+    fonts: &crate::fonts::Fonts,
+    draft: &Value,
+    copies: usize,
+    cut: &str,
+    confirm_red: bool,
+) -> Result<Value> {
+    if !(1..=100).contains(&copies) || !["each", "end"].contains(&cut) {
+        bail!("Invalid copies or cut option.");
+    }
+    let size = draft["sizeId"].as_str().context("Missing paper size")?;
+    let high = draft["highRes"].as_bool().unwrap_or(false);
+    let _lock = acquire_lock(config)?;
+    check_media(config, size, false, confirm_red)?;
+    let image = crate::rendering::render(draft, fonts, false)?;
+    let rotated = draft["orientation"] == "rotated";
+    let dither = draft["content"]["mode"] != "bw";
+    let normal = rasterize(
+        &config.model,
+        size,
+        &image,
+        rotated,
+        high,
+        cut == "each",
+        dither,
+    )?;
+    let final_cut = if cut == "end" {
+        Some(rasterize(
+            &config.model,
+            size,
+            &image,
+            rotated,
+            high,
+            true,
+            dither,
+        )?)
+    } else {
+        None
+    };
+    let pages: Vec<_> = (0..copies)
+        .map(|i| {
+            (
+                &image,
+                if i + 1 == copies {
+                    final_cut.as_deref().unwrap_or(&normal)
+                } else {
+                    normal.as_slice()
+                },
+            )
+        })
+        .collect();
+    submit(config, &pages).map_err(|e| {
+        failure(
+            502,
+            format!("Printing stopped: {e}. Check the printer before retrying."),
+        )
+    })?;
+    let simulated = device(config) == "simulation";
+    Ok(
+        json!({"kind":if simulated{"simulated"}else{"printed"},"copies":copies,"message":if simulated{"Test image saved"}else{"Printed"}}),
+    )
+}
+
 pub fn print_drafts(
     config: &Config,
     fonts: &crate::fonts::Fonts,
-    drafts: &[Value],
+    drafts: &[&Value],
     cut: &str,
     job_id: Option<&str>,
     confirm_red: bool,
@@ -618,11 +682,8 @@ pub fn print_drafts(
     let mut pixels = 0u64;
     let mut pages = vec![];
     for (index, draft) in drafts.iter().enumerate() {
-        let img = crate::rendering::render(draft, fonts, false).with_context(|| {
-            format!(
-                "Label {}: rendering failed. No labels were sent.",
-                index + 1
-            )
+        let img = crate::rendering::render(draft, fonts, false).map_err(|error| {
+            anyhow::anyhow!("Label {}: {error}. No labels were sent.", index + 1)
         })?;
         pixels += img.width() as u64 * img.height() as u64;
         if pixels > 64_000_000 {
@@ -642,7 +703,11 @@ pub fn print_drafts(
     if let Some(path) = &job {
         record(path, json!({"state":"submitted","count":drafts.len()}))?;
     }
-    submit(config, &pages).map_err(|e| {
+    let borrowed: Vec<_> = pages
+        .iter()
+        .map(|(image, raster)| (image, raster.as_slice()))
+        .collect();
+    submit(config, &borrowed).map_err(|e| {
         failure(
             502,
             format!("Printing stopped: {e}. Check the printer before starting another batch."),
@@ -656,7 +721,7 @@ pub fn print_drafts(
         json!({"kind":if simulated{"simulated"}else{"printed"},"copies":drafts.len(),"message":if job_id.is_some(){"Batch complete"}else if simulated{"Test image saved"}else{"Printed"}}),
     )
 }
-fn submit(config: &Config, pages: &[(RgbImage, Vec<u8>)]) -> Result<()> {
+fn submit(config: &Config, pages: &[(&RgbImage, &[u8])]) -> Result<()> {
     let dev = device(config);
     if dev == "simulation" {
         let dir = config.data_dir.join("simulated_labels");
@@ -692,15 +757,22 @@ pub fn print_images(
     if !device(config).starts_with("tcp://") {
         check_media(config, size, false, false)?;
     }
-    let pages = images
+    let total_pixels: u64 = images
         .iter()
-        .map(|im| {
-            Ok((
-                im.clone(),
-                rasterize(&config.model, size, im, rotated, high_res, true, dither)?,
-            ))
-        })
+        .map(|im| im.width() as u64 * im.height() as u64)
+        .sum();
+    if total_pixels > 64_000_000 {
+        bail!("Batch images are too large. Select fewer labels.");
+    }
+    let rasters = images
+        .iter()
+        .map(|im| rasterize(&config.model, size, im, rotated, high_res, true, dither))
         .collect::<Result<Vec<_>>>()?;
+    let pages: Vec<_> = images
+        .iter()
+        .zip(&rasters)
+        .map(|(im, r)| (im, r.as_slice()))
+        .collect();
     submit(config, &pages)
 }
 struct UsbDevice {

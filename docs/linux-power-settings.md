@@ -4,18 +4,18 @@ The QL-800 tested on 2026-09-28 accepted a Linux-only change from 60 minutes to 
 
 ## Run
 
-The standalone script uses Python 3's standard library and `/dev/usb/lp0`. The printer must be powered on, idle, and in normal USB printer mode.
+The Rust server binary includes a settings command for `/dev/usb/lp0`. The printer must be powered on, idle, and in normal USB printer mode.
 
 Stop any printing service that does not share the Studio lock before running it. In particular, the recovered legacy `brother_ql_web.service` does not honor that lock. Restore services afterward, including if the utility fails. Do not run this concurrently with CUPS, another driver, or another printer-settings utility.
 
 ```sh
-PRINTER_PRINTER=file:///dev/usb/lp0 label-studio-server power-get
-PRINTER_PRINTER=file:///dev/usb/lp0 label-studio-server power-set 0
+LABEL_STUDIO_CONFIG=/etc/label-studio/application.json label-studio-server power-get
+LABEL_STUDIO_CONFIG=/etc/label-studio/application.json label-studio-server power-set 0
 ```
 
-`0` disables automatic shutdown. Values 10, 20, 30, 40, 50, and 60 select minutes. Only 60 and 0 were observed on this QL-800; other values follow the QL-700 encoding and are not yet hardware-tested here. The script validates the QL-800 status header, idle/error state, setting acknowledgement, and range before any setting write. A value already set is not rewritten. Every write is followed by a read-back; failed verification is reported as uncertain, not success.
+`0` disables automatic shutdown. Values 10, 20, 30, 40, 50, and 60 select minutes. Only 60 and 0 were observed on this QL-800; other values follow the QL-700 encoding and are not yet hardware-tested here. The command validates the QL-800 status header, idle/error state, setting acknowledgement, and range before any setting write. A value already set is not rewritten. Every write is followed by a read-back; failed verification is reported as uncertain, not success.
 
-The default lock is `instance/studio-printer.lock` next to the script. Use `--lock` to match a custom `STUDIO_PRINTER_LOCK` and `--device` for a different usblp node. Advisory locking only coordinates software using the same lock. The utility does not detach the kernel driver, reset the printer, print a label, or enumerate unknown commands.
+The lock is `printer.lock` in the configured data directory. Use the same `LABEL_STUDIO_CONFIG` as the service so both commands share the device and lock. Set `PRINTER_PRINTER` and `STUDIO_DATA_DIR` together when using environment overrides. Advisory locking only coordinates software using the same lock. The utility does not detach the kernel driver, reset the printer, print a label, or enumerate unknown commands.
 
 ## Evidence and protocol
 

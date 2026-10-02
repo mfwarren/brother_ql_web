@@ -95,10 +95,9 @@ pub async fn print(State(s): State<AppState>, request: Request) -> Response {
     ) {
         return failure(StatusCode::UNAUTHORIZED, "Unauthorized");
     }
-    match tokio::task::spawn_blocking(move || process(&s, &params, images)).await {
-        Ok(Ok(value)) => Json(value).into_response(),
-        Ok(Err(e)) => failure(StatusCode::BAD_REQUEST, e),
-        Err(e) => failure(StatusCode::INTERNAL_SERVER_ERROR, e),
+    match crate::api::blocking(move || process(&s, &params, images)).await {
+        Ok(value) => Json(value).into_response(),
+        Err(e) => failure(e.0, e.1),
     }
 }
 fn process(s: &AppState, v: &Value, files: Vec<(String, Vec<u8>)>) -> Result<Value> {
@@ -148,6 +147,7 @@ fn process(s: &AppState, v: &Value, files: Vec<(String, Vec<u8>)>) -> Result<Val
         std::mem::swap(&mut w, &mut h);
     }
     let mut images = Vec::new();
+    let mut total_pixels = 0u64;
     for (name, data) in files {
         let mime = if name.to_lowercase().ends_with(".pdf") || data.starts_with(b"%PDF-") {
             "application/pdf"
@@ -174,6 +174,12 @@ fn process(s: &AppState, v: &Value, files: Vec<(String, Vec<u8>)>) -> Result<Val
         ensure!(
             u64::from(nw) * u64::from(nh) <= 16_000_000,
             "Image is too large."
+        );
+        total_pixels +=
+            u64::from(if w == 0 { nw } else { w }) * u64::from(if h == 0 { nh } else { h });
+        ensure!(
+            total_pixels <= 64_000_000,
+            "Batch images are too large. Select fewer labels."
         );
         let resized =
             image::imageops::resize(&image, nw, nh, image::imageops::FilterType::Lanczos3);

@@ -69,7 +69,7 @@ impl IntoResponse for ApiError {
     }
 }
 type ApiResult<T> = std::result::Result<T, ApiError>;
-async fn blocking<T: Send + 'static>(
+pub(crate) async fn blocking<T: Send + 'static>(
     f: impl FnOnce() -> Result<T> + Send + 'static,
 ) -> ApiResult<T> {
     static WORKERS: std::sync::LazyLock<Arc<tokio::sync::Semaphore>> =
@@ -203,12 +203,12 @@ async fn print(State(s): State<AppState>, Json(v): Json<Value>) -> ApiResult<Jso
         let d = validation::draft(&v["draft"], &s.config, &f, false)?;
         let copies = validation::integer(&v["copies"], "Copies", 1, 100)?;
         let cut = cut(&v)?;
-        printer::print_drafts(
+        printer::print_copies(
             &s.config,
             &f,
-            &vec![d; copies as usize],
+            &d,
+            copies as usize,
             cut,
-            None,
             v["confirmRedMedia"] == true,
         )
         .map(Json)
@@ -292,7 +292,15 @@ async fn print_bulk(State(s): State<AppState>, Json(v): Json<Value>) -> ApiResul
             .iter()
             .map(|d| validation::draft(d, &s.config, &f, false))
             .collect::<Result<Vec<_>>>()?;
-        printer::print_drafts(&s.config, &f, &drafts, cut(&v)?, Some(&job), false).map(Json)
+        printer::print_drafts(
+            &s.config,
+            &f,
+            &drafts.iter().collect::<Vec<_>>(),
+            cut(&v)?,
+            Some(&job),
+            false,
+        )
+        .map(Json)
     })
     .await
 }

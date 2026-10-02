@@ -142,7 +142,8 @@ fn failed_sent_batch_is_recorded_and_retry_cannot_send_again() {
     let fonts = crate::fonts::Fonts::load(&cfg).unwrap();
     let fake = FakePrinter::new(&cfg, 1, true);
     let job = uuid::Uuid::new_v4().to_string();
-    let drafts = [draft(&fonts)];
+    let value = draft(&fonts);
+    let drafts = [&value];
     let error = print_drafts(&fake.config, &fonts, &drafts, "each", Some(&job), false).unwrap_err();
     assert_eq!(error.downcast_ref::<PrintError>().unwrap().status, 502);
     assert_eq!(fake.printed.load(Ordering::SeqCst), 1);
@@ -163,7 +164,7 @@ fn simulation_cut_end_cuts_only_final_page() {
     let result = print_drafts(
         &cfg,
         &fonts,
-        &[draft(&fonts), draft(&fonts)],
+        &[&draft(&fonts), &draft(&fonts)],
         "end",
         None,
         false,
@@ -194,7 +195,7 @@ fn oversized_batch_sends_nothing_and_does_not_consume_job_id() {
     d["sizeId"] = "102x152".into();
     d["highRes"] = true.into();
     let job = uuid::Uuid::new_v4().to_string();
-    let error = print_drafts(&cfg, &fonts, &vec![d; 9], "each", Some(&job), false).unwrap_err();
+    let error = print_drafts(&cfg, &fonts, &[&d; 9], "each", Some(&job), false).unwrap_err();
     assert!(error.to_string().contains("Batch images are too large"));
     assert!(!dir.path().join("simulated_labels").exists());
     assert!(

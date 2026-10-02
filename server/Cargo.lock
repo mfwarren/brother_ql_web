@@ -752,6 +752,7 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "chrono-tz",
+ "encoding_rs",
  "freetype-rs",
  "fs2",
  "image",

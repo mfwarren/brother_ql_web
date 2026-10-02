@@ -41,6 +41,9 @@ impl Config {
                     *target = s.into();
                 }
             }
+            if v["dataDir"].is_string() && !v["labelsDir"].is_string() {
+                config.labels_dir = config.data_dir.join("labels");
+            }
             if let Some(s) = v["fontFolder"].as_str() {
                 config.font_folder = Some(s.into());
             }
@@ -84,6 +87,7 @@ impl Config {
         if let Ok(s) = std::env::var("WEBHOOK_PASSWORD") {
             config.webhook_password = s;
         }
+        crate::media::model(&config.model)?;
         std::fs::create_dir_all(&config.data_dir)?;
         std::fs::create_dir_all(&config.labels_dir)?;
         Ok(config)

@@ -1,5 +1,6 @@
 # Cross-judge: React static vs. server-rendered Flask
 
+Historical frontend design comparison. The React frontend remains; the current server implementation is Rust. See [code structure](architecture.md).
 Scores use 1 (weak) to 5 (strong).
 
 | Criterion | React static | Flask + small JS | Judgment |
