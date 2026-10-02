@@ -149,10 +149,6 @@ export default function LibraryView({
                     ))}
                 </div>
             )}
-            <p className="library-footnote">
-                Labels made in the <a href="/labeldesigner/">advanced editor</a>{" "}
-                stay in its separate library, with all their formatting intact.
-            </p>
         </>
     );
 }

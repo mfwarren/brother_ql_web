@@ -136,6 +136,8 @@ type Props = {
     font: string;
     size: number;
     fonts: Config["fonts"];
+    lineSpacing: number;
+    onLineSpacingChange: (value: number) => void;
 };
 export default function RichTextEditor({
     value,
@@ -143,6 +145,8 @@ export default function RichTextEditor({
     font,
     size,
     fonts,
+    lineSpacing,
+    onLineSpacingChange,
 }: Props) {
     const emitted = useRef(new Set<string>());
     const editor = useEditor({
@@ -294,6 +298,21 @@ export default function RichTextEditor({
                             </option>
                         ))}
                 </select>
+                <label className="line-spacing-control" title="Line spacing">
+                    <span>Spacing</span>
+                    <input
+                        aria-label="Line spacing percent"
+                        type="number"
+                        min={100}
+                        max={300}
+                        step={10}
+                        value={lineSpacing}
+                        onChange={(event) =>
+                            onLineSpacingChange(Number(event.target.value))
+                        }
+                    />
+                    <span>%</span>
+                </label>
                 <TextSize
                     value={selectedSize ?? size}
                     onChange={(next) =>
@@ -388,7 +407,9 @@ export default function RichTextEditor({
                     fontStyle: "normal",
                 }}
             >
-                <EditorContent editor={editor} />
+                <div style={{ lineHeight: lineSpacing / 100 }}>
+                    <EditorContent editor={editor} />
+                </div>
             </div>
             <span className="small muted">
                 Select text to format · Preview shows the printed layout

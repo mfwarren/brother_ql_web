@@ -114,9 +114,8 @@ class TestLabelDesignerAPI:
 
     def test_render_frontend(self, client: FlaskClient):
         response = client.get('/labeldesigner/')
-        assert response.status_code == 200
-        assert b'labeldesigner' in response.data
-        assert response.content_type == 'text/html; charset=utf-8'
+        assert response.status_code == 302
+        assert response.location.endswith('/studio/')
 
     def test_get_barcodes(self, client: FlaskClient):
         response = client.get('/labeldesigner/api/barcodes')

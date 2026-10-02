@@ -334,8 +334,8 @@ class SimpleLabel:
                     vertical_offset_text *= 1.25
 
             vertical_offset_text += img_height
-            horizontal_offset_text = max((width - textsize[2])//2, 0)
-            horizontal_offset_image = (width - img_width)//2
+            horizontal_offset_text = max(margin_left + (width - margin_left - margin_right - textsize[2])//2, 0)
+            horizontal_offset_image = margin_left + (width - margin_left - margin_right - img_width)//2
             vertical_offset_image = margin_top
 
         elif self._label_orientation == LabelOrientation.ROTATED:
@@ -352,7 +352,7 @@ class SimpleLabel:
 
             horizontal_offset_text += img_width
             horizontal_offset_image = margin_left
-            vertical_offset_image = (height - img_height)//2
+            vertical_offset_image = margin_top + (height - margin_top - margin_bottom - img_height)//2
 
         text_offset = horizontal_offset_text, vertical_offset_text
         image_offset = horizontal_offset_image, vertical_offset_image

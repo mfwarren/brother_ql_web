@@ -109,13 +109,15 @@ def text_image(draft, width, height):
             raise ValueError('Text exceeds the label width. Reduce the selected text size or margins.')
         layouts.append((runs, ascent, descent, left, ink_width))
     actual_width = width or max(1, max(layout[4] for layout in layouts))
-    actual_height = sum(ascent + descent for _, ascent, descent, _, _ in layouts)
+    spacing = draft.get('lineSpacing', 100) / 100
+    advances = [math.ceil((ascent + descent) * spacing) for _, ascent, descent, _, _ in layouts]
+    actual_height = sum(advances[:-1]) + layouts[-1][1] + layouts[-1][2]
     if actual_height > (height or 11000) or actual_width * actual_height > 16_000_000:
         raise ValueError('Text exceeds the label height. Reduce text size, text, or margins.')
     image = Image.new('RGB', (actual_width, max(1, actual_height)), 'white')
     draw = ImageDraw.Draw(image)
     y = 0
-    for runs, ascent, descent, left, ink_width in layouts:
+    for index, (runs, ascent, descent, left, ink_width) in enumerate(layouts):
         x = {'left': 0, 'center': (actual_width-ink_width)/2, 'right': actual_width-ink_width}[draft['align']] - left
         for text, font, underline in runs:
             draw.text((x, y+ascent), text, font=font, fill=draft['color'], anchor='ls')
@@ -124,7 +126,7 @@ def text_image(draft, width, height):
                 baseline = min(y + ascent + max(1, round(font.size / 12)), y + ascent + descent - thickness)
                 draw.rectangle((x, baseline, x + font.getlength(text), baseline + thickness - 1), fill=draft['color'])
             x += font.getlength(text)
-        y += ascent + descent
+        y += advances[index]
     return image
 
 
@@ -138,12 +140,12 @@ def render_label(draft):
     rotated = draft['orientation'] == 'rotated'
     if rotated:
         width, height = height, width
-    margin = draft['margin']
-    if (width and width <= margin*2) or (height and height <= margin*2):
+    left, right, top, bottom = (draft.get('margins', {}).get(side, draft['margin']) for side in ('left', 'right', 'top', 'bottom'))
+    if (width and width <= left+right) or (height and height <= top+bottom):
         raise ValueError('Margins leave no printable text area.')
-    image = text_image(draft, width-margin*2 if width else 0, height-margin*2 if height else 0)
+    image = text_image(draft, width-left-right if width else 0, height-top-bottom if height else 0)
     if 'verticalAlign' in draft and media.form_factor in (FormFactor.DIE_CUT, FormFactor.ROUND_DIE_CUT):
-        available = height - margin*2
+        available = height - top - bottom
         bounds = ImageChops.difference(image, Image.new('RGB', image.size, 'white')).getbbox()
         if bounds:
             image = image.crop((0, bounds[1], image.width, bounds[3]))
@@ -155,4 +157,4 @@ def render_label(draft):
                   LabelType.DIE_CUT_LABEL if media.form_factor == FormFactor.DIE_CUT else LabelType.ROUND_DIE_CUT_LABEL)
     return SimpleLabel(width=width, height=height, label_content=LabelContent.IMAGE_COLORED,
                        label_orientation=LabelOrientation.ROTATED if rotated else LabelOrientation.STANDARD,
-                       label_type=label_type, label_margin=(margin,)*4, text=[], image=image)
+                       label_type=label_type, label_margin=(left, right, top, bottom), text=[], image=image)

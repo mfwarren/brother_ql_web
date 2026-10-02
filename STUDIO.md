@@ -36,7 +36,7 @@ Start the server:
 .venv/bin/python serve.py
 ```
 
-Open <http://127.0.0.1:8014/studio/>. **Test print** creates a raster job and PNG under `simulated_labels/`; it uses no paper. The classic editor is at `/labeldesigner/`.
+Open <http://127.0.0.1:8014/studio/>. **Test print** creates a raster job and PNG under `simulated_labels/`; it uses no paper. Old `/labeldesigner/` bookmarks redirect to Studio.
 
 ## Build from Git
 
@@ -73,7 +73,7 @@ This is a shared-printer app without user accounts. Run it on a trusted local ne
 - Settings controls defaults and local font installation. Google Fonts are downloaded from the official repository with their licenses. Original variable fonts render directly; weights and italics need no slow conversion. TTF/OTF uploads are supported.
 - New labels can follow detected media. Saved labels retain their roll settings, and mismatches are checked again before printing.
 
-Modern labels use versioned JSON in `instance/studio-labels/`, or `STUDIO_LABELS_DIR`. Settings and installed fonts live beside that directory, or under `STUDIO_DATA_DIR`. Back up the complete data directory, including hidden files. The classic editor retains its separate library; no automatic conversion discards its template or barcode options.
+Modern labels use versioned JSON in `instance/studio-labels/`, or `STUDIO_LABELS_DIR`. Settings and installed fonts live beside that directory, or under `STUDIO_DATA_DIR`. Back up the complete data directory, including hidden files. Existing classic label files are preserved on disk; Studio does not import them.
 
 Samples are seeded once; deleted samples stay deleted. Set `STUDIO_SEED_SAMPLES = False` to disable seeding. To add missing samples to an existing library, preserving existing sample IDs and edits:
 
@@ -100,3 +100,7 @@ npm run build --prefix frontend
 ```
 
 Tests cover rendering, QR decoding, persistence, font weights, formatting, alignment, stock checks, and USB transport. Browser checks cover desktop, tablet, and phone viewports; these are not physical iOS-device tests. Legacy PNG snapshot tests remain a separate manual workflow because their original routes and exact artwork differ from Studio.
+
+## Text spacing and margins
+
+Use **Spacing** in the text toolbar to set line spacing from 100% to 300%. In **Label settings**, margins are linked by default; turn off **Link sides** to adjust each side. Margins reduce the text area and affect wrapping. **Show margin guides** overlays the usable area in the preview only, including rotated labels. Saved labels and bulk templates retain spacing and margins.

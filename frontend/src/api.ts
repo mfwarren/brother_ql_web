@@ -52,6 +52,15 @@ export const draftSchema = z.object({
     verticalAlign: z.enum(["top", "center", "bottom"]).optional(),
     color: z.enum(["black", "red"]),
     margin: z.number(),
+    margins: z
+        .object({
+            top: z.number(),
+            right: z.number(),
+            bottom: z.number(),
+            left: z.number(),
+        })
+        .optional(),
+    lineSpacing: z.number().optional(),
     highRes: z.boolean(),
 });
 export type Draft = z.infer<typeof draftSchema>;

@@ -5,7 +5,6 @@ import {
     AlignLeft,
     AlignRight,
     ArrowDownToLine,
-    ArrowUpRight,
     Check,
     ChevronRight,
     CircleHelp,
@@ -44,6 +43,8 @@ import LibraryView from "./LibraryView";
 import PrinterView from "./PrinterView";
 import SettingsView from "./SettingsView";
 import RichTextEditor from "./RichTextEditor";
+import MarginControls from "./MarginControls";
+import LabelPreview, { type PreviewImage } from "./LabelPreview";
 
 type Page = "editor" | "library" | "printer" | "settings";
 type Preview =
@@ -79,11 +80,11 @@ export default function App() {
     const [name, setName] = useState("");
     const [search, setSearch] = useState("");
     const [preview, setPreview] = useState<Preview>({ kind: "empty" });
-    const [displayedImage, setDisplayedImage] = useState<{
-        url: string;
-        sizeId: string;
-    } | null>(null);
+    const [displayedImage, setDisplayedImage] = useState<PreviewImage | null>(
+        null,
+    );
     const displayedUrl = displayedImage?.url;
+    const [showMargins, setShowMargins] = useState(false);
     useEffect(
         () => () => {
             if (displayedUrl) URL.revokeObjectURL(displayedUrl);
@@ -230,7 +231,13 @@ export default function App() {
                         URL.revokeObjectURL(url);
                         return;
                     }
-                    setDisplayedImage({ url, sizeId: draft.sizeId });
+                    setDisplayedImage({
+                        url,
+                        sizeId: draft.sizeId,
+                        width: image.naturalWidth,
+                        height: image.naturalHeight,
+                        draft,
+                    });
                     setPreview({
                         kind: "ready",
                         url,
@@ -582,9 +589,6 @@ export default function App() {
                             </small>
                         </div>
                     </div>
-                    <a href="/labeldesigner/" target="_blank" rel="noreferrer">
-                        Advanced editor <ArrowUpRight size={14} />
-                    </a>
                 </div>
             </aside>
             <main className="main">
@@ -755,6 +759,17 @@ export default function App() {
                                                         font={draft.font}
                                                         size={draft.fontSize}
                                                         fonts={config.fonts}
+                                                        lineSpacing={
+                                                            draft.lineSpacing ??
+                                                            100
+                                                        }
+                                                        onLineSpacingChange={(
+                                                            lineSpacing,
+                                                        ) =>
+                                                            update({
+                                                                lineSpacing,
+                                                            })
+                                                        }
                                                     />
                                                 )}
                                                 {draft.content.kind ===
@@ -1474,27 +1489,14 @@ export default function App() {
                                                             </option>
                                                         </select>
                                                     </label>
-                                                    <label className="field">
-                                                        Margin{" "}
-                                                        <span className="optional">
-                                                            px
-                                                        </span>
-                                                        <input
-                                                            type="number"
-                                                            min={0}
-                                                            max={100}
-                                                            value={draft.margin}
-                                                            onChange={(event) =>
-                                                                update({
-                                                                    margin: Number(
-                                                                        event
-                                                                            .target
-                                                                            .value,
-                                                                    ),
-                                                                })
-                                                            }
-                                                        />
-                                                    </label>
+                                                    <MarginControls
+                                                        draft={draft}
+                                                        onChange={update}
+                                                        showGuide={showMargins}
+                                                        onShowGuide={
+                                                            setShowMargins
+                                                        }
+                                                    />
                                                 </div>
                                                 <label className="check-field">
                                                     <input
@@ -1614,11 +1616,22 @@ export default function App() {
                                                         }
                                                     >
                                                         {displayedUrl ? (
-                                                            <img
-                                                                src={
-                                                                    displayedUrl
+                                                            <LabelPreview
+                                                                image={
+                                                                    displayedImage!
                                                                 }
-                                                                alt="Rendered label preview"
+                                                                fixed={
+                                                                    !!config.sizes.find(
+                                                                        (
+                                                                            size,
+                                                                        ) =>
+                                                                            size.id ===
+                                                                            displayedImage?.sizeId,
+                                                                    )?.fixedSize
+                                                                }
+                                                                guide={
+                                                                    showMargins
+                                                                }
                                                             />
                                                         ) : preview.kind ===
                                                           "pending" ? (

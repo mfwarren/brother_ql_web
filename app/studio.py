@@ -96,6 +96,14 @@ def _validate_draft(draft, *, allow_image_url=False):
     if color not in ('black', 'red'):
         raise InputError('Invalid color.')
     margin = _int(draft.get('margin'), 'Margin', 0, 100)
+    if 'lineSpacing' in draft:
+        _int(draft['lineSpacing'], 'Line spacing', 100, 300)
+    if 'margins' in draft:
+        margins = draft['margins']
+        if not isinstance(margins, dict) or set(margins) != {'top', 'right', 'bottom', 'left'}:
+            raise InputError('Provide all four margins.')
+        for side, value in margins.items():
+            _int(value, f'{side.title()} margin', 0, 100)
     high_res = _bool(draft.get('highRes'), 'highRes')
     if (color == 'red' or (isinstance(draft.get('content'), dict) and draft['content'].get('mode') == 'red')) and size != '62red':
         raise InputError('Red requires 62red media.')
@@ -177,12 +185,11 @@ def _to_upstream(draft, image_bytes):
     kind = content['kind']
     line_text = content['text'] if kind == 'text' else content.get('caption', '')
     lines = [{'text': text, 'font': draft['font'], 'size': str(draft['fontSize']),
-              'align': draft['align'], 'color': draft['color'], 'line_spacing': '100'}
+              'align': draft['align'], 'color': draft['color'], 'line_spacing': str(draft.get('lineSpacing', 100))}
              for text in line_text.splitlines()]
     values = {'label_size': draft['sizeId'], 'orientation': draft['orientation'],
               'text': json.dumps(lines), 'print_type': {'text': 'text', 'qr': 'qrcode_text', 'barcode': 'qrcode_text', 'image': 'image'}[kind],
-              'margin_top': draft['margin'], 'margin_bottom': draft['margin'],
-              'margin_left': draft['margin'], 'margin_right': draft['margin'],
+              **{f'margin_{side}': draft.get('margins', {}).get(side, draft['margin']) for side in ('top', 'right', 'bottom', 'left')},
               'high_res': int(draft['highRes']), 'print_color': draft['color'], 'border_thickness': 0}
     files = {}
     if kind in ('qr', 'barcode'):
@@ -198,7 +205,7 @@ def _to_upstream(draft, image_bytes):
 
 
 def _render(draft, image_bytes):
-    if draft['content']['kind'] == 'text' and ('paragraphs' in draft['content'] or 'verticalAlign' in draft):
+    if draft['content']['kind'] == 'text' and ('paragraphs' in draft['content'] or 'verticalAlign' in draft or 'lineSpacing' in draft or 'margins' in draft):
         from app.rich_text import render_label
         if 'paragraphs' not in draft['content']:
             draft = {**draft, 'content': {**draft['content'], 'paragraphs': [{'runs': [{'text': line}]} for line in draft['content']['text'].split('\n')]}}

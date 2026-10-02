@@ -14,12 +14,10 @@ Make labels for storage bins, mailing addresses, file folders, equipment, guest 
 - Merge CSV data into text, QR, barcode, and image-caption templates. Preview up to 100 labels, fix row errors, and print selected rows. [Bulk printing guide](docs/bulk-printing.md).
 - Create Code 128, EAN-13, EAN-8, and UPC-A barcodes with optional captions. Retail check digits are calculated and validated automatically.
 - Add QR codes with captions, upload images, or print the first page of a PDF. Use QR labels for links, equipment identifiers, or Wi-Fi access.
-- Adjust orientation, margins, and text alignment. Center text vertically on fixed-size labels, or let continuous labels grow to fit the content.
+- Adjust orientation, line spacing, individual margins, and text alignment. Show margin guides in the preview to check the usable area. Center text vertically on fixed-size labels, or let continuous labels grow to fit the content.
 - Check the rendered preview before printing. It stays visible while edits update, so you can keep working without the page jumping around.
 - Choose fonts from Google Fonts or upload TTF/OTF files. Installed fonts stay on the printer host and are available to everyone using the app.
 - Save labels with their formatting and paper settings. Reprint a favorite, duplicate it for a new item, or print several copies at once.
-
-The advanced editor also provides template options.
 
 ## Share one printer
 

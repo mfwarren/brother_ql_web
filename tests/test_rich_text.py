@@ -206,3 +206,50 @@ def test_plain_initial_top_matches_top_after_edit(client):
     assert initial.data == edited.data
     value['verticalAlign'] = 'center'
     assert client.post('/studio/api/preview', json=value).data != initial.data
+
+
+def test_line_spacing_changes_distance_and_survives_save(client):
+    value = rich_draft(client)
+    value['content'] = {'kind': 'text', 'text': 'First line\nSecond line', 'paragraphs': [{'runs': [{'text': 'First line'}]}, {'runs': [{'text': 'Second line'}]}]}
+    value['lineSpacing'] = 180
+    value['margins'] = {'top': 10, 'right': 20, 'bottom': 30, 'left': 40}
+    wide = client.post('/studio/api/preview', json=value)
+    assert_png(wide)
+    saved = client.post('/studio/api/labels', json={'name': 'Spaced', 'draft': value}).json
+    assert saved['draft'] == value
+    assert client.post('/studio/api/preview', json=saved['draft']).data == wide.data
+    tight = client.post('/studio/api/preview', json={**value, 'lineSpacing': 100})
+    assert Image.open(io.BytesIO(wide.data)).height > Image.open(io.BytesIO(tight.data)).height
+
+
+@pytest.mark.parametrize('orientation', ['standard', 'rotated'])
+def test_asymmetric_margins_bound_text_and_position_top(client, orientation):
+    from app.studio import _render
+    value = rich_draft(client)
+    value.update(sizeId='29x90', fontSize=20, orientation=orientation, align='left', verticalAlign='top',
+                 margins={'top': 17, 'right': 22, 'bottom': 31, 'left': 43})
+    value['content'] = {'kind': 'text', 'text': 'Hello', 'paragraphs': [{'runs': [{'text': 'Hello'}]}]}
+    with client.application.app_context():
+        image = _render(value, None).generate()
+    bounds = ImageChops.difference(image, Image.new('RGB', image.size, 'white')).getbbox()
+    assert bounds[1] == 17
+    assert 43 <= bounds[0] <= 48
+    assert bounds[2] <= image.width - 22
+    assert bounds[3] <= image.height - 31
+
+
+@pytest.mark.parametrize('patch', [ {'lineSpacing': 99}, {'lineSpacing': 301}, {'lineSpacing': '150'},
+    {'margins': {'top': 10}}, {'margins': {'top': -1, 'right': 0, 'bottom': 0, 'left': 0}} ])
+def test_invalid_spacing_and_margins_rejected(client, patch):
+    value = rich_draft(client)
+    value.update(patch)
+    assert client.post('/studio/api/preview', json=value).status_code == 400
+
+
+def test_old_editor_redirects_and_error_page_has_no_bootstrap(client):
+    response = client.get('/labeldesigner/')
+    assert response.status_code == 302
+    assert response.location.endswith('/studio/')
+    missing = client.get('/not-a-page')
+    assert missing.status_code == 404
+    assert b'bootstrap' not in missing.data.lower()
