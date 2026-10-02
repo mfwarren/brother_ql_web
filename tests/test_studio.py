@@ -254,8 +254,8 @@ def test_print_rechecks_changed_roll_before_render_or_send(client, monkeypatch, 
     label['sizeId'] = '62'
     assert client.get('/studio/api/status').json['matchingSizes'] == ['62']
     raw.update(loaded)
-    monkeypatch.setattr(studio, 'render', lambda *args: pytest.fail('Rendered a mismatched job'))
-    monkeypatch.setattr(studio.PrinterQueue, 'process_queue', lambda *args: pytest.fail('Sent a mismatched job'))
+    monkeypatch.setattr('app.printing.render', lambda *args: pytest.fail('Rendered a mismatched job'))
+    monkeypatch.setattr('app.labeldesigner.printer.PrinterQueue.process_queue', lambda *args: pytest.fail('Sent a mismatched job'))
     result = client.post('/studio/api/print', json={
         'draft': label, 'copies': 1, 'cut': 'each', 'confirmRedMedia': True})
     assert result.status_code == 503

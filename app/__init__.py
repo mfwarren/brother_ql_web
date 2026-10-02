@@ -35,7 +35,7 @@ def create_app(config_class=Config) -> Flask:
     from app.main import bp as main_bp
     app.register_blueprint(main_bp)
 
-    from app.labeldesigner import bp as labeldesigner_bp
+    from app.labeldesigner import bp as labeldesigner_bp, routes
     app.register_blueprint(labeldesigner_bp, url_prefix='/labeldesigner')
 
     from app import studio_preferences

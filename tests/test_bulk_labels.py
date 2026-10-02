@@ -130,3 +130,18 @@ def test_bulk_uses_shared_cut_setting(client, monkeypatch):
         'jobId': str(uuid.uuid4()), 'drafts': [draft(client), draft(client)], 'cut': 'end'})
     assert result.status_code == 200
     assert cuts == [False, True]
+
+
+def test_failed_batch_cannot_be_resubmitted(client, monkeypatch):
+    from app.labeldesigner.printer import PrinterQueue
+    calls = []
+    def fail_after_submission(self):
+        calls.append(True)
+        return 'USB write failed'
+    monkeypatch.setattr(PrinterQueue, 'process_queue', fail_after_submission)
+    payload = {'jobId': str(uuid.uuid4()), 'drafts': [draft(client)]}
+    response = client.post('/studio/api/bulk/print', json=payload)
+    assert response.status_code == 502
+    assert 'Some labels may have printed' in response.json['message']
+    assert client.post('/studio/api/bulk/print', json=payload).status_code == 409
+    assert len(calls) == 1

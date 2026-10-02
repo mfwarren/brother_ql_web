@@ -81,5 +81,3 @@ def name_and_draft(data):
     except Exception as error:
         raise InputError(str(error))
     return name, draft
-
-

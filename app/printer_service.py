@@ -27,8 +27,8 @@ def printer_lock():
             fcntl.flock(lock, fcntl.LOCK_UN)
 
 
-def device():
-    spec = current_app.config['PRINTER_PRINTER']
+def device(spec=None):
+    spec = spec if spec is not None else current_app.config['PRINTER_PRINTER']
     if spec == 'simulation':
         return 'simulation'
     if spec == '?':
@@ -78,8 +78,8 @@ def status_from_raw(raw, model, expected_size=None):
     return {'state': 'ready', 'model': reported_model, 'message': 'Printer ready', 'media': media, 'matchingSizes': matching, 'mediaColor': color}
 
 
-def status_locked(device, expected_size=None):
-    model = current_app.config['PRINTER_MODEL']
+def status_locked(device, expected_size=None, *, model=None):
+    model = model or current_app.config['PRINTER_MODEL']
     if device == 'simulation':
         return {'state': 'simulation', 'model': model, 'message': 'Test print to file', 'media': None}
     if not device or (device.startswith('file://') and not os.path.exists(device[7:])):
@@ -92,5 +92,3 @@ def status_locked(device, expected_size=None):
     except Exception:
         current_app.logger.exception('Printer status failed')
         return {'state': 'offline', 'model': model, 'message': 'Printer unavailable', 'media': None}
-
-

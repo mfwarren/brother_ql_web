@@ -140,5 +140,3 @@ def validate_draft(draft, *, allow_image_url=False):
     else:
         raise InputError('Invalid content type.')
     return draft, image_bytes
-
-

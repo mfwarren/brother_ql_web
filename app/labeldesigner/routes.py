@@ -8,6 +8,7 @@ from PIL import Image
 from brother_ql.labels import ALL_LABELS, FormFactor
 from . import bp
 from .printer import PrinterQueue
+from app.printing import print_image_queue
 from .label import SimpleLabel, LabelContent, LabelOrientation, LabelType
 from .rendering import DEFAULT_DPI, _get_label_dimensions
 from app.utils import convert_image_to_bw, convert_image_to_grayscale, convert_image_to_red_and_black, pdffile_to_image, imgfile_to_image
@@ -21,14 +22,6 @@ def handle_value_error(e):
 @bp.route('/')
 def index():
     return redirect(url_for('studio.index'))
-
-
-def _process_webhook_queue(printer: PrinterQueue):
-    if printer.device_specifier in ('simulation', '?'):
-        return printer.process_queue()
-    from app.printer_service import printer_lock
-    with printer_lock() as acquired:
-        return printer.process_queue() if acquired else 'Printer busy'
 
 
 def _convert_image(img: Image.Image, image_mode: str, bw_threshold: int = 70) -> Image.Image:
@@ -236,10 +229,11 @@ def webhook_print():
                 text=[],
             )
             printer.add_label_to_queue(label, cut=True, high_res=high_res)
-        status = _process_webhook_queue(printer)
+        print_image_queue(printer)
+        status = ""
     except Exception as e:
         current_app.logger.exception(e)
-        return make_response(jsonify({'success': False, 'message': 'Failed to print labels'}), 400)
+        return make_response(jsonify({'success': False, 'message': str(e)}), 400)
 
     result = {
         'success': len(status) == 0,

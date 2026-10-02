@@ -23,5 +23,3 @@ def body():
     if not isinstance(data, dict):
         raise InputError('Expected a JSON object.')
     return data
-
-

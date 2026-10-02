@@ -38,5 +38,3 @@ def render(draft, image_bytes):
     label = build_label(values, files)
     label.expand_templates = False
     return label
-
-

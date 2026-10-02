@@ -44,3 +44,14 @@ def test_retired_editor_endpoints_are_not_registered(client):
     assert {path for path in paths if path.startswith('/labeldesigner/')} == {
         '/labeldesigner/', '/labeldesigner/api/webhook/print',
     }
+
+
+def test_webhook_checks_roll_before_sending(client, monkeypatch):
+    client.application.config.update(WEBHOOK_PASSWORD='test-password', PRINTER_PRINTER='file:///dev/usb/lp0')
+    monkeypatch.setattr('app.printer_service.status_locked', lambda *args, **kwargs: {
+        'state': 'error', 'message': 'Loaded roll does not match the requested label.'})
+    monkeypatch.setattr('app.labeldesigner.printer.PrinterQueue.process_queue',
+                        lambda self: pytest.fail('Sent a label on mismatched media'))
+    response = client.post('/labeldesigner/api/webhook/print', json={**image_payload(), 'password': 'test-password'})
+    assert response.status_code == 400
+    assert 'does not match' in response.json['message']
