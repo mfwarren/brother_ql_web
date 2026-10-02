@@ -87,6 +87,10 @@ struct Bounds {
     advance: f64,
 }
 impl Font {
+    #[allow(
+        clippy::unnecessary_cast,
+        reason = "FreeType C long is 32 bits on the Pi and 64 bits on desktop"
+    )]
     fn from_face(mut face: Face, size: u32, axes: &[f32]) -> Result<Self> {
         if !axes.is_empty() {
             let mut coordinates: Vec<freetype::ffi::FT_Fixed> = axes
@@ -118,6 +122,10 @@ impl Font {
     fn load(library: &Library, path: &Path, size: u32, axes: &[f32]) -> Result<Self> {
         Self::from_face(library.new_face(path, 0)?, size, axes)
     }
+    #[allow(
+        clippy::unnecessary_cast,
+        reason = "FreeType C long is 32 bits on the Pi and 64 bits on desktop"
+    )]
     fn bounds(&self, text: &str) -> Result<Bounds> {
         let mut b = Bounds::default();
         let mut pen = 0f64;
@@ -580,31 +588,31 @@ fn compose(
     fit: bool,
 ) -> Result<RgbImage> {
     let [left, right, top, bottom] = margins(draft);
-    if let Some(image) = content.as_mut() {
-        if fit {
-            let max_w = (g.width as i64 - left - right).max(1) as f64;
-            let max_h = (g.height as i64 - top - bottom).max(1) as f64;
-            let scale = if g.continuous {
-                if g.rotated {
-                    max_h / image.height() as f64
-                } else {
-                    max_w / image.width() as f64
-                }
+    if let Some(image) = content.as_mut()
+        && fit
+    {
+        let max_w = (g.width as i64 - left - right).max(1) as f64;
+        let max_h = (g.height as i64 - top - bottom).max(1) as f64;
+        let scale = if g.continuous {
+            if g.rotated {
+                max_h / image.height() as f64
             } else {
-                (max_w / image.width() as f64).min(max_h / image.height() as f64)
-            };
-            let (w, h) = (
-                (image.width() as f64 * scale) as i64,
-                (image.height() as f64 * scale) as i64,
-            );
-            let _ = canvas(w, h)?;
-            *image = imageops::resize(
-                image,
-                w.max(1) as u32,
-                h.max(1) as u32,
-                imageops::FilterType::Lanczos3,
-            );
-        }
+                max_w / image.width() as f64
+            }
+        } else {
+            (max_w / image.width() as f64).min(max_h / image.height() as f64)
+        };
+        let (w, h) = (
+            (image.width() as f64 * scale) as i64,
+            (image.height() as f64 * scale) as i64,
+        );
+        let _ = canvas(w, h)?;
+        *image = imageops::resize(
+            image,
+            w.max(1) as u32,
+            h.max(1) as u32,
+            imageops::FilterType::Lanczos3,
+        );
     }
     let (iw, ih) = content
         .as_ref()
