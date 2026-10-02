@@ -32,4 +32,30 @@ parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="images"; fi
 parts.append(f'--{boundary}--\r\n'.encode())
 result, _ = client.request(endpoint, 'POST', b''.join(parts), headers={'Content-Type': f'multipart/form-data; boundary={boundary}'})
 assert result == {'success': True, 'count': 1}, result
-print('PASS webhook authentication, JSON images, rotation, and multipart upload; simulation only')
+
+# A full Letter page at 600 dpi exceeds the decoder's intermediate-image limit.
+# The webhook must rasterize the vector PDF directly at the label dimensions.
+stream = b'0 g 396 20 0.4 752 re f 396.8 20 0.4 752 re f\n'
+objects = [
+    b'<< /Type /Catalog /Pages 2 0 R >>',
+    b'<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    b'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R >>',
+    b'<< /Length ' + str(len(stream)).encode() + b' >>\nstream\n' + stream + b'endstream',
+]
+pdf = bytearray(b'%PDF-1.4\n')
+offsets = []
+for number, obj in enumerate(objects, 1):
+    offsets.append(len(pdf))
+    pdf.extend(f'{number} 0 obj\n'.encode() + obj + b'\nendobj\n')
+xref = len(pdf)
+pdf.extend(b'xref\n0 5\n0000000000 65535 f \n')
+for offset in offsets:
+    pdf.extend(f'{offset:010} 00000 n \n'.encode())
+pdf.extend(f'trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n'.encode())
+for size in ['62', '29x90']:
+    result, _ = client.request(endpoint, 'POST', {
+        'password': args.password, 'label_size': size, 'high_res': 1,
+        'images': [base64.b64encode(pdf).decode()],
+    })
+    assert result == {'success': True, 'count': 1}, result
+print('PASS webhook authentication, JSON images, rotation, multipart upload, and high-resolution Letter PDFs on continuous/fixed labels; simulation only')

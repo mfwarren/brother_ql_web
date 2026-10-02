@@ -205,3 +205,31 @@ fn oversized_batch_sends_nothing_and_does_not_consume_job_id() {
             .exists()
     );
 }
+
+#[test]
+fn one_hundred_high_resolution_copies_reuse_a_single_rendered_page() {
+    let dir = tempfile::tempdir().unwrap();
+    let cfg = config(dir.path());
+    let fonts = crate::fonts::Fonts::load(&cfg).unwrap();
+    let mut document = draft(&fonts);
+    document["sizeId"] = "62x100".into();
+    document["highRes"] = true.into();
+    let result = print_copies(&cfg, &fonts, &document, 100, "end", false).unwrap();
+    assert_eq!(result["copies"], 100);
+    let binaries: Vec<_> = fs::read_dir(dir.path().join("simulated_labels"))
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .filter(|p| p.extension().is_some_and(|e| e == "bin"))
+        .collect();
+    assert_eq!(binaries.len(), 100);
+    let cuts = binaries
+        .iter()
+        .filter(|p| {
+            fs::read(p)
+                .unwrap()
+                .windows(4)
+                .any(|w| w.starts_with(b"\x1biK") && w[3] & 8 != 0)
+        })
+        .count();
+    assert_eq!(cuts, 1);
+}

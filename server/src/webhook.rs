@@ -146,6 +146,10 @@ fn process(s: &AppState, v: &Value, files: Vec<(String, Vec<u8>)>) -> Result<Val
     if rotated {
         std::mem::swap(&mut w, &mut h);
     }
+    ensure!(
+        u64::from(w) * u64::from(h) * files.len() as u64 <= 64_000_000,
+        "Batch images are too large. Select fewer labels."
+    );
     let mut images = Vec::new();
     let mut total_pixels = 0u64;
     for (name, data) in files {
@@ -156,7 +160,11 @@ fn process(s: &AppState, v: &Value, files: Vec<(String, Vec<u8>)>) -> Result<Val
         } else {
             "image/jpeg"
         };
-        let mut image = crate::rendering::decode_image(&data, mime)?;
+        let mut image = if high {
+            crate::rendering::decode_image_for_label(&data, mime, 600, w.max(h))?
+        } else {
+            crate::rendering::decode_image(&data, mime)?
+        };
         for p in image.pixels_mut() {
             *p = convert_pixel(*p, mode, threshold as u8);
         }
@@ -224,6 +232,33 @@ fn convert_pixel(pixel: image::Rgb<u8>, mode: &str, threshold: u8) -> image::Rgb
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn oversized_fixed_batch_is_rejected_before_image_decode() {
+        let directory = tempfile::tempdir().unwrap();
+        let config = crate::config::Config {
+            model: "QL-1100".into(),
+            data_dir: directory.path().into(),
+            ..Default::default()
+        };
+        let state = AppState {
+            fonts: std::sync::Arc::new(std::sync::RwLock::new(
+                crate::fonts::Fonts::load(&config).unwrap(),
+            )),
+            config: std::sync::Arc::new(config),
+        };
+        let result = process(
+            &state,
+            &json!({"label_size":"102x152","high_res":1}),
+            vec![("image.png".into(), vec![0]); 100],
+        );
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Batch images are too large")
+        );
+        assert!(!directory.path().join("simulated_labels").exists());
+    }
     #[test]
     fn webhook_color_mapping_matches_existing_palette() {
         for (level, expected) in [
