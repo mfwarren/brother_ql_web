@@ -908,14 +908,24 @@ fn code128_input(value: &str) -> String {
 }
 
 pub fn decode_image(bytes: &[u8], mime: &str) -> Result<RgbImage> {
+    decode_image_with_dpi(bytes, mime, 300)
+}
+
+pub fn decode_image_with_dpi(bytes: &[u8], mime: &str, dpi: u32) -> Result<RgbImage> {
     let bytes = if mime == "application/pdf" {
+        ensure!(
+            matches!(dpi, 300 | 600),
+            "PDF resolution must be 300 or 600 dpi."
+        );
         let directory = tempfile::tempdir()?;
         let input = directory.path().join("input.pdf");
         let output = directory.path().join("page");
         std::fs::write(&input, bytes)?;
         let mut command = Command::new("pdftoppm");
         command
-            .args(["-f", "1", "-l", "1", "-r", "300", "-singlefile", "-png"])
+            .args(["-f", "1", "-l", "1", "-r"])
+            .arg(dpi.to_string())
+            .args(["-singlefile", "-png"])
             .arg(&input)
             .arg(&output);
         command
@@ -1033,5 +1043,49 @@ mod tests {
             let ink: u32 = image.pixels().map(|p| 255 - p[0] as u32).sum();
             assert_eq!(ink, expected_ink, "weight {weight}");
         }
+    }
+    fn vector_pdf() -> Vec<u8> {
+        let content = "0 g 36 5 0.12 26 re f 36.24 5 0.12 26 re f\n";
+        let objects = [
+            "<< /Type /Catalog /Pages 2 0 R >>".to_owned(),
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_owned(),
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 72 36] /Resources << >> /Contents 4 0 R >>".to_owned(),
+            format!("<< /Length {} >>\nstream\n{content}endstream", content.len()),
+        ];
+        let mut pdf = b"%PDF-1.4\n".to_vec();
+        let mut offsets = Vec::new();
+        for (index, object) in objects.iter().enumerate() {
+            offsets.push(pdf.len());
+            pdf.extend_from_slice(format!("{} 0 obj\n{object}\nendobj\n", index + 1).as_bytes());
+        }
+        let xref = pdf.len();
+        pdf.extend_from_slice(b"xref\n0 5\n0000000000 65535 f \n");
+        for offset in offsets {
+            pdf.extend_from_slice(format!("{offset:010} 00000 n \n").as_bytes());
+        }
+        pdf.extend_from_slice(
+            format!("trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n").as_bytes(),
+        );
+        pdf
+    }
+
+    #[test]
+    fn pdf_high_resolution_preserves_native_vector_detail() {
+        let pdf = vector_pdf();
+        let normal = decode_image(&pdf, "application/pdf").unwrap();
+        let high = decode_image_with_dpi(&pdf, "application/pdf", 600).unwrap();
+        assert_eq!(normal.dimensions(), (300, 150));
+        assert_eq!(high.dimensions(), (600, 300));
+        assert!(normal.get_pixel(150, 75)[0] < 128 && normal.get_pixel(151, 75)[0] < 128);
+        assert!(high.get_pixel(300, 150)[0] < 128 && high.get_pixel(302, 150)[0] < 128);
+        assert!(
+            high.get_pixel(301, 150)[0] > 200,
+            "600 dpi must resolve the white gap between fine strokes"
+        );
+        // Separate vector strokes remain distinct at 600 dpi instead of enlarging the 300 dpi bitmap.
+        assert_ne!(
+            high,
+            imageops::resize(&normal, 600, 300, imageops::FilterType::Nearest)
+        );
     }
 }
