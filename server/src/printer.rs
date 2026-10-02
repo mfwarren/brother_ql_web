@@ -985,3 +985,7 @@ mod tests {
         assert!(acquire_lock(&c).is_ok());
     }
 }
+
+#[cfg(test)]
+#[path = "printer_risk_tests.rs"]
+mod risk_tests;

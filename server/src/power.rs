@@ -58,3 +58,71 @@ pub fn power(config: &Config, minutes: Option<u8>) -> Result<Value> {
     }
     Ok(json!({"changed":true,"before":before,"after":after}))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{
+        io::{Read, Write},
+        os::{fd::OwnedFd, unix::net::UnixStream},
+    };
+    fn response(value: u8) -> Vec<u8> {
+        let mut p = vec![0; 32];
+        p[..6].copy_from_slice(&[0x80, 0x20, 0x42, 0x34, 0x38, 0x30]);
+        p[18] = 0xf0;
+        p[30] = value;
+        p[31] = 1;
+        p
+    }
+    fn exchange(packet: Vec<u8>, kind: u8) -> Result<(u8, String)> {
+        let (client, mut fake) = UnixStream::pair().unwrap();
+        client.set_nonblocking(true).unwrap();
+        fake.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
+        let worker = std::thread::spawn(move || {
+            let mut command = [0; 5];
+            fake.read_exact(&mut command).unwrap();
+            assert_eq!(&command, b"\x1biUA\x01");
+            fake.write_all(&packet).unwrap();
+        });
+        let result = query(&mut File::from(OwnedFd::from(client)), b"\x1biUA\x01", kind);
+        worker.join().unwrap();
+        result
+    }
+    #[test]
+    fn settings_accept_only_known_ql800_idle_acknowledgements() {
+        for value in 0..=6 {
+            assert_eq!(exchange(response(value), 0xf0).unwrap().0, value * 10);
+        }
+        for (index, value) in [
+            (4, 0x39),
+            (8, 1),
+            (9, 1),
+            (18, 0),
+            (19, 1),
+            (30, 7),
+            (31, 0),
+        ] {
+            let mut p = response(3);
+            p[index] = value;
+            assert!(exchange(p, 0xf0).is_err(), "index {index}");
+        }
+        let mut p = response(255);
+        p[18] = 0;
+        assert_eq!(exchange(p, 0).unwrap().0, 0);
+    }
+    #[test]
+    fn invalid_minutes_never_open_a_device() {
+        let cfg = Config {
+            printer: "file:///does-not-exist".into(),
+            ..Config::default()
+        };
+        for minutes in [1, 9, 11, 61, 255] {
+            assert!(
+                power(&cfg, Some(minutes))
+                    .unwrap_err()
+                    .to_string()
+                    .starts_with("Minutes must be")
+            );
+        }
+    }
+}
