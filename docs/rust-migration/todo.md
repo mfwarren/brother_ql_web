@@ -5,7 +5,8 @@
 - [x] Port rendering, font management, printer transport, and HTTP services across separate modules.
 - [x] Verify each module with behavior tests, then compare end-to-end API output.
 - [x] Update production packaging and deployment configuration.
-- [ ] Verify on Raspberry Pi before replacing the Python service.
+- [x] Verify on Raspberry Pi before replacing the Python service.
+- [x] Publish the migration PR and verify Linux CI.
 
 Done means the React application uses a Rust process for every server endpoint, existing saved labels/fonts/settings load, text/QR/barcode/image and bulk workflows pass compatibility checks, and printer status/raster output pass checks without an unsolicited physical print. Preserve the legacy text layout. Python remains a reference until those checks pass.
 

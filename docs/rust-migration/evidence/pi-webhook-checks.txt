@@ -1,0 +1,1 @@
+PASS webhook authentication, JSON images, rotation, multipart upload, and high-resolution Letter PDFs on continuous/fixed labels; simulation only

@@ -1,0 +1,7 @@
+PASS configuration, validation, saved-label round trips, persistent preferences
+PASS CSV errors, multiline rows, split rich placeholders, literal values, frozen builtins
+PASS image, QR and four barcode previews (15 machine-decoded images)
+PASS font catalog, original-file upload, registry reload, invalid font rejection
+PASS simulation-only single/bulk printing, cut options, duplicate suppression, mixed-roll rejection
+PASS unsafe remote-image URL rejection
+PASS 84 HTTP requests against http://labels.local:8016

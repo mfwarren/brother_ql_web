@@ -32,4 +32,16 @@ CI runs the same native and HTTP checks against a debug binary, plus the React b
 
 ## Raspberry Pi
 
-Deployment verification is pending. The Python service remains available until the ARM binary, saved-label previews, fonts, and read-only printer status have passed on the Pi.
+Deployed commit `7e8b7668088fa8b295ef4143bd2668b3bf826a2a` as a native ARMv7 release on the Raspberry Pi, using the existing port 80 systemd service. The release is `/opt/label-studio/releases/20261002-rust-7e8b766`.
+
+Verification first ran on port 8016 against a copy of the data in simulation mode. [84 HTTP checks](evidence/pi-http-checks.txt), [PDF webhook checks](evidence/pi-webhook-checks.txt), and [request admission checks](evidence/pi-admission-checks.txt) passed on the Pi itself. All [104 font identifiers and defaults](evidence/pi-font-comparison.json) match Python. Of nine saved-label previews, [eight are pixel-identical and one QR has an equivalent decoded mask](evidence/pi-render-comparison.json). The same preview comparison passed after cutover on port 80.
+
+[Live deployment checks](evidence/pi-deployment.json) confirm all nine saved documents remain unchanged and the QL-800 reports ready with a black-only 29 × 90 mm die-cut roll. A read-only power query returned zero minutes, meaning automatic power-off is disabled. The browser displayed a ready preview and the detected roll. Physical printing remains untested.
+
+The old Python release, original service file, and a private data/configuration backup remain available for rollback. Temporary simulation and hardware-check servers were stopped after verification.
+
+The Pi build exposed damaged GCC development archives and C header files. Reinstalling the GCC development packages repaired the archives; the build used a private extraction of clean C headers rather than replacing the live C runtime. The affected system headers still need repair. This is an existing host maintenance issue, not a Rust runtime requirement, and the cause was not established.
+
+## Independent review
+
+A separate GPT-5.6-sol review checked the implementation and evidence. Its findings led to bounded batch memory, reused rendering for repeated copies, high-resolution PDF checks, legacy webhook error compatibility, request admission before body buffering, upload inactivity timeouts, and bounded CSV expansion. The final review found no remaining blocking or high-impact code issues. Deployment gates were completed afterward as documented above. [Linux CI](https://github.com/mfwarren/brother_ql_web/actions/runs/37022563772) passed the native, frontend, and HTTP checks at the deployed code revision.

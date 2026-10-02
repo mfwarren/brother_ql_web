@@ -1,0 +1,19 @@
+{
+  "labelsUnchanged": 9,
+  "fontIdsUnchanged": 104,
+  "defaultsUnchanged": true,
+  "status": {
+    "matchingSizes": [
+      "29x90"
+    ],
+    "media": "29 \u00d7 90 mm Die-cut labels (black only)",
+    "mediaColor": "black",
+    "message": "Printer ready",
+    "model": "QL-800",
+    "state": "ready"
+  },
+  "service": "label-studio-server",
+  "port": 80,
+  "deployedCommit": "7e8b7668088fa8b295ef4143bd2668b3bf826a2a",
+  "physicalPrintSent": false
+}
