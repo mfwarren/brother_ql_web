@@ -99,5 +99,8 @@ def print_image_queue(queue):
     """Keep the webhook request format while applying the same printer safeguards."""
     queue.device_specifier = printer_service.device(queue.device_specifier)
     with printing_session(queue):
-        check_media(queue)
+        # TCP transport cannot query media; preserve the existing webhook's
+        # ability to send to network printers while USB uses full preflight.
+        if not (queue.device_specifier or '').startswith('tcp://'):
+            check_media(queue)
         submit(queue)

@@ -55,3 +55,17 @@ def test_webhook_checks_roll_before_sending(client, monkeypatch):
     response = client.post('/labeldesigner/api/webhook/print', json={**image_payload(), 'password': 'test-password'})
     assert response.status_code == 400
     assert 'does not match' in response.json['message']
+
+
+def test_webhook_preserves_tcp_transport_without_status_support(client, monkeypatch):
+    client.application.config.update(WEBHOOK_PASSWORD='test-password', PRINTER_PRINTER='tcp://192.0.2.1:9100')
+    monkeypatch.setattr('app.printer_service.status_locked',
+                        lambda *args, **kwargs: pytest.fail('TCP transport does not support status queries'))
+    sent = []
+    def send(self):
+        sent.append(self.device_specifier)
+        return ''
+    monkeypatch.setattr('app.labeldesigner.printer.PrinterQueue.process_queue', send)
+    response = client.post('/labeldesigner/api/webhook/print', json={**image_payload(), 'password': 'test-password'})
+    assert response.status_code == 200
+    assert sent == ['tcp://192.0.2.1:9100']
