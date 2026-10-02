@@ -1,7 +1,7 @@
 """Render validated Studio drafts directly, without form-field conversion."""
 from io import BytesIO
 from PIL import Image
-import app as app_module
+from app.text_rendering import render_text, plain_lines
 from app.label_geometry import DEFAULT_DPI, label_geometry, margins
 from app.labeldesigner.label import SimpleLabel
 from app.labeldesigner.enums import LabelContent
@@ -21,20 +21,11 @@ def label_image(content, image_bytes):
 def render(draft, image_bytes):
     content = draft['content']
     kind = content['kind']
-    if kind == 'text' and ('paragraphs' in content or 'verticalAlign' in draft or 'lineSpacing' in draft or 'margins' in draft):
-        from app.rich_text import render_label
-        if 'paragraphs' not in content:
-            draft = {**draft, 'content': {**content, 'paragraphs': [{'runs': [{'text': line}]} for line in content['text'].split('\n')]}}
-        return render_label(draft)
-    geometry = label_geometry(draft)
-    text = content['text'] if kind == 'text' else content.get('caption', '')
-    lines = [{'text': line, 'font': draft['font'], 'size': str(draft['fontSize']),
-              'align': draft['align'], 'color': draft['color'], 'line_spacing': str(draft.get('lineSpacing', 100)),
-              'path': app_module.FONTS.get_path(draft['font']), 'variations': app_module.FONTS.get_variations(draft['font'])}
-             for line in text.splitlines()]
     if kind == 'text':
-        label_content = LabelContent.TEXT_ONLY
-    elif kind in ('qr', 'barcode'):
+        return render_text(draft)
+    geometry = label_geometry(draft)
+    lines = plain_lines(content.get('caption', ''), draft)
+    if kind in ('qr', 'barcode'):
         label_content = LabelContent.TEXT_QRCODE
     else:
         label_content = {'grayscale': LabelContent.IMAGE_GRAYSCALE, 'bw': LabelContent.IMAGE_BW,

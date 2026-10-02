@@ -78,7 +78,7 @@ Modern labels use versioned JSON in `instance/studio-labels/`, or `STUDIO_LABELS
 Samples are seeded once; deleted samples stay deleted. Set `STUDIO_SEED_SAMPLES = False` to disable seeding. To add missing samples to an existing library, preserving existing sample IDs and edits:
 
 ```sh
-.venv/bin/python -c 'from app import create_app; from app.studio import seed_starter_labels; app = create_app(); ctx = app.app_context(); ctx.push(); seed_starter_labels(add_to_existing=True)'
+.venv/bin/python -c 'from app import create_app; from app.label_store import seed_starter_labels; app = create_app(); ctx = app.app_context(); ctx.push(); seed_starter_labels(add_to_existing=True)'
 ```
 
 ## Compatibility and limits
@@ -93,7 +93,7 @@ Hardware density adjustment is not implemented. See [QL-800 notes](docs/ql800.md
 
 ```sh
 .venv/bin/python -m pip install -r requirements-dev.txt
-.venv/bin/python -m pytest tests/test_studio.py tests/test_studio_qr.py tests/test_studio_barcodes.py tests/test_bulk_labels.py tests/test_remote_images.py tests/test_printer_settings.py tests/test_studio_samples.py tests/test_studio_preferences.py tests/test_usb_transport.py tests/test_rich_text.py tests/test_webhook.py -q
+.venv/bin/python -m pytest tests/test_studio.py tests/test_studio_qr.py tests/test_studio_barcodes.py tests/test_bulk_labels.py tests/test_remote_images.py tests/test_printer_settings.py tests/test_studio_samples.py tests/test_studio_preferences.py tests/test_usb_transport.py tests/test_rich_text.py tests/test_webhook.py tests/test_text_rendering.py -q
 node --experimental-strip-types frontend/title-checks.mjs
 node --experimental-strip-types frontend/rich-text-checks.mjs
 npm run build --prefix frontend
