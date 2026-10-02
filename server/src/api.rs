@@ -121,7 +121,7 @@ pub fn router(config: Config) -> Result<Router> {
         config: Arc::new(config),
         fonts: Arc::new(RwLock::new(fonts)),
     };
-    Ok(Router::new()
+    let pages = Router::new()
         .route("/", get(|| async { Redirect::to("/studio/") }))
         .route(
             "/labeldesigner/",
@@ -136,7 +136,8 @@ pub fn router(config: Config) -> Result<Router> {
         .nest_service(
             "/static/studio",
             tower_http::services::ServeDir::new(static_dir),
-        )
+        );
+    let endpoints = Router::new()
         .route("/studio/api/config", get(config_get))
         .route("/studio/api/status", get(status))
         .route("/studio/api/preview", post(preview))
@@ -159,7 +160,29 @@ pub fn router(config: Config) -> Result<Router> {
             post(crate::webhook::print),
         )
         .layer(DefaultBodyLimit::max(8 * 1024 * 1024 + 65536))
-        .with_state(s))
+        .layer(tower_http::timeout::RequestBodyTimeoutLayer::new(
+            std::time::Duration::from_secs(30),
+        ))
+        .route_layer(axum::middleware::from_fn_with_state(
+            Arc::new(tokio::sync::Semaphore::new(4)),
+            admit_request,
+        ));
+    Ok(pages.merge(endpoints).with_state(s))
+}
+async fn admit_request(
+    State(slots): State<Arc<tokio::sync::Semaphore>>,
+    request: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> Response {
+    let Ok(_permit) = slots.try_acquire_owned() else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            [(header::RETRY_AFTER, "1")],
+            Json(json!({"success":false,"message":"Server busy. Please try again shortly."})),
+        )
+            .into_response();
+    };
+    next.run(request).await
 }
 async fn index(State(s): State<AppState>) -> ApiResult<Response> {
     let bytes = tokio::fs::read(s.config.static_dir.join("index.html"))
