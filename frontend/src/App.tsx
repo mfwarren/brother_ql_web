@@ -60,7 +60,7 @@ export default function App() {
         row: number;
     } | null>(null);
     const [bulkBusy, setBulkBusy] = useState(false);
-    const previewDraft = bulkEnabled ? bulkPreview?.draft : draft;
+    const previewDraft = bulkPreview?.draft ?? draft;
     const [page, setPage] = useState<Page>("editor");
     const [labels, setLabels] = useState<SavedLabel[]>([]);
     const [followLoadedRoll, setFollowLoadedRoll] = useState(true);
@@ -361,6 +361,7 @@ export default function App() {
                 !(event.metaKey || event.ctrlKey) ||
                 page !== "editor" ||
                 bulkEnabled ||
+                bulkPreview !== null ||
                 document.querySelector("dialog[open]")
             )
                 return;
@@ -651,7 +652,6 @@ export default function App() {
                                             name={name}
                                             draft={draft}
                                             config={config}
-                                            bulkEnabled={bulkEnabled}
                                             bulkPreview={bulkPreview}
                                             preview={preview}
                                             displayedImage={displayedImage}
@@ -661,7 +661,10 @@ export default function App() {
                                         />
                                         <section
                                             className="print-panel panel"
-                                            hidden={bulkEnabled}
+                                            hidden={
+                                                bulkEnabled ||
+                                                bulkPreview !== null
+                                            }
                                         >
                                             {mismatchedPaper && (
                                                 <div
