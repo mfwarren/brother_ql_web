@@ -49,10 +49,10 @@ class Client:
         with response:
             payload = response.read()
             assert response.status == expected, f'{method} {path}: expected {expected}, got {response.status}: {payload[:600]!r}'
-            content_type = response.headers.get('Content-Type', '')
+            content_type = response.headers.get('content-type', '')
             if 'application/json' in content_type:
                 payload = json.loads(payload)
-            return payload, dict(response.headers)
+            return payload, {key.lower(): value for key, value in response.headers.items()}
 
     def json(self, path, method='GET', body=None, expected=200):
         headers = {'Content-Type': 'application/json'} if isinstance(body, bytes) else None
@@ -64,8 +64,8 @@ class Client:
 
     def preview(self, draft):
         data, headers = self.request('/studio/api/preview', 'POST', draft)
-        assert headers.get('Content-Type', '').startswith('image/png')
-        assert 'no-store' in headers.get('Cache-Control', '')
+        assert headers.get('content-type', '').startswith('image/png')
+        assert 'no-store' in headers.get('cache-control', '')
         png_size(data)
         return data
 
@@ -179,8 +179,13 @@ def check_bulk(client, basic, font):
     assert first['draft']['content']['paragraphs'][0]['runs'][1] == {'text': 'Coffee', 'underline': True}
     assert second['draft']['content']['text'] == 'Hi {{env:SECRET}}!'
     client.preview(first['draft'])
-    for csv in ['A,A\n1,2', ',B\n1,2', '@row\n1', 'Name\n', 'Name\n"unclosed']:
+    for csv in ['A,A\n1,2', ',B\n1,2', '@row\n1', 'Name\n', 'Name\n"unclosed', '\ufeff"Name"junk\nCoffee', '\nName\nCoffee']:
         client.json('/studio/api/bulk/prepare', 'POST', {'template': basic, 'csv': csv}, 400)
+    multiline = draft(font, {'kind': 'text', 'text': '{{Name}} {{SKU}}'})
+    rows = client.json('/studio/api/bulk/prepare', 'POST', {
+        'template': multiline, 'csv': 'Name,SKU\r\n"Coffee\rbeans\r\nbag\nlarge",0012\r\nTea,0013'})['rows']
+    assert [row['line'] for row in rows] == [5, 6], 'CSV errors/previews must identify physical source lines'
+    assert rows[0]['draft']['content']['text'] == 'Coffee\rbeans\r\nbag\nlarge 0012'
     barcode = draft(font, {'kind': 'barcode', 'format': 'ean8', 'code': '{{SKU}}', 'caption': '{{Name}}'})
     rows = client.json('/studio/api/bulk/prepare', 'POST', {'template': barcode, 'csv': '\ufeffSKU,Name\n9638507,Tea\nwrong,Coffee\nshort', 'timezone': 'UTC'})['rows']
     assert [row['kind'] for row in rows] == ['ready', 'error', 'error']
@@ -304,7 +309,8 @@ def compare(client, directory):
                 if diff.getbbox() is None:
                     pixels_equal += 1
                     continue
-                mismatch['changedPixels'] = sum(pixel != (0, 0, 0) for pixel in diff.getdata())
+                pixels = diff.tobytes()
+                mismatch['changedPixels'] = sum(pixels[i:i + 3] != b'\x00\x00\x00' for i in range(0, len(pixels), 3))
         except ImportError:
             mismatch['pixelComparison'] = 'Install Pillow to compare independently of PNG encoding'
         (directory / ('actual-' + case['png'])).write_bytes(image)

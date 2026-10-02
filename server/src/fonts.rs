@@ -386,7 +386,27 @@ fn inspect_faces(
     ensure!(!records.is_empty(), "Font contains no supported weight");
     // Validate printable outlines with the same engine used by the rasterizer.
     let library = freetype::Library::init()?;
-    let ft = library.new_memory_face(data.to_vec(), 0)?;
+    let mut ft = library.new_memory_face(data.to_vec(), 0)?;
+    let regular = records
+        .iter()
+        .min_by_key(|face| (face.italic, face.weight.abs_diff(400)))
+        .unwrap();
+    if !regular.axes.is_empty() {
+        let coordinates: Vec<freetype::ffi::FT_Fixed> = regular
+            .axes
+            .iter()
+            .map(|value| (*value as f64 * 65536.0).round() as freetype::ffi::FT_Fixed)
+            .collect();
+        // The face owns the font bytes, and coordinates are live for this synchronous call.
+        let error = unsafe {
+            freetype::ffi::FT_Set_Var_Design_Coordinates(
+                ft.raw_mut(),
+                coordinates.len() as u32,
+                coordinates.as_ptr(),
+            )
+        };
+        ensure!(error == 0, "Font variation axes cannot be rendered.");
+    }
     ft.set_pixel_sizes(0, 30)?;
     for ch in "Label 123".chars() {
         ft.load_char(ch as usize, freetype::face::LoadFlag::RENDER)?;
@@ -645,6 +665,33 @@ mod tests {
                 .len()
                 > 1500
         );
+    }
+    #[test]
+    fn damaged_font_offsets_and_truncations_return_errors_without_panicking() {
+        let (_root, config) = test_config();
+        let original = available_font(&config);
+        for length in [0, 1, 4, 11] {
+            assert!(upload(&config, &original[..length]).is_err());
+        }
+        let mut damaged = original.clone();
+        // Corrupt all sfnt table offsets while retaining a recognizable font header.
+        let count = u16::from_be_bytes([damaged[4], damaged[5]]) as usize;
+        for index in 0..count {
+            let offset = 12 + index * 16 + 8;
+            damaged[offset..offset + 4].copy_from_slice(&u32::MAX.to_be_bytes());
+        }
+        assert!(upload(&config, &damaged).is_err());
+        assert!(!config.data_dir.join("fonts").exists());
+    }
+    #[test]
+    fn invalid_managed_manifest_cannot_escape_its_font_directory() {
+        let (_root, config) = test_config();
+        let folder = config.data_dir.join("fonts/managed");
+        fs::create_dir_all(&folder).unwrap();
+        fs::write(folder.join("faces.json"), serde_json::to_vec(&json!([
+            {"family":"Managed","style":"Regular","file":"../../outside.ttf","axes":[],"weight":400,"italic":false}
+        ])).unwrap()).unwrap();
+        assert!(Fonts::load_roots(&config, &[]).is_err());
     }
     #[test]
     fn catalog_installation_marker_is_persistent() {
