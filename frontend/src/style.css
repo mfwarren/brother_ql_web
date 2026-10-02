@@ -322,8 +322,15 @@ h3 {
     gap: 12px;
     align-items: start;
 }
-.editor-panel {
+.content-column {
     grid-area: content;
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+}
+.settings-column {
+    grid-area: settings;
+    min-width: 0;
 }
 .layout-details {
     grid-area: settings;
@@ -1506,16 +1513,14 @@ details[open] summary > svg:last-child {
 }
 
 .bulk-workspace {
-    padding: 20px;
-    max-width: 1400px;
-    margin: auto;
-    padding-bottom: 100px;
+    padding: 12px;
+    min-width: 0;
 }
 .bulk-setup {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin: 16px 0;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+    gap: 12px;
+    margin: 0 0 12px;
 }
 .bulk-panel {
     padding: 18px;
@@ -1598,9 +1603,6 @@ details[open] summary > svg:last-child {
     .bulk-setup {
         grid-template-columns: 1fr;
     }
-    .bulk-workspace {
-        padding: 12px 12px 100px;
-    }
     .bulk-gallery {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -1623,13 +1625,35 @@ details[open] summary > svg:last-child {
 .print-panel[hidden] {
     display: none;
 }
-.bulk-workspace {
-    padding: 16px 0 80px;
+.bulk-toggle {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    min-height: 44px;
+    padding: 12px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
 }
-.topbar-actions .button[aria-pressed="true"] {
-    background: #e3edfc;
-    color: #0756b3;
-    border-color: #a8c5ea;
+.bulk-toggle > svg:last-child {
+    margin-left: auto;
+}
+.bulk-toggle[aria-expanded="true"] {
+    border-bottom: 1px solid var(--line);
+    border-radius: 6px 6px 0 0;
+}
+.bulk-toggle[aria-expanded="true"] > svg:last-child {
+    transform: rotate(90deg);
+}
+.bulk-toggle:disabled {
+    cursor: wait;
 }
 
 .margin-controls {

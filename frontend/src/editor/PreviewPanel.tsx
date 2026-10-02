@@ -12,7 +12,6 @@ import type { Preview } from "../useLabelPreview";
 type Props = {
     draft: Draft;
     config: Config;
-    bulkEnabled: boolean;
     bulkPreview: { draft: Draft; row: number } | null;
     preview: Preview;
     displayedImage: PreviewImage | null;
@@ -24,7 +23,6 @@ type Props = {
 export default function PreviewPanel({
     draft,
     config,
-    bulkEnabled,
     bulkPreview,
     preview,
     displayedImage,
@@ -39,10 +37,7 @@ export default function PreviewPanel({
                 <div>
                     <h2>
                         Preview
-                        {bulkEnabled &&
-                            (bulkPreview
-                                ? " · Row " + bulkPreview.row
-                                : " · Check data below")}
+                        {bulkPreview && " · Row " + bulkPreview.row}
                     </h2>
                 </div>
                 <span className="preview-tag">

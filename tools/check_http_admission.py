@@ -49,7 +49,7 @@ try:
     status, body, retry = request('/studio/api/config')
     assert status == 503 and retry == '1', (status, body, retry)
     assert 'busy' in json.loads(body)['message'].lower()
-    assert request('/studio/')[0] == 200, 'Static interface must remain available.'
+    assert request('/')[0] == 200, 'Static interface must remain available.'
     # Leave every client connected. The server must release stalled body slots itself.
     deadline = time.monotonic() + 35
     while time.monotonic() < deadline:

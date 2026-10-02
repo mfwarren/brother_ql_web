@@ -122,17 +122,11 @@ pub fn router(config: Config) -> Result<Router> {
         fonts: Arc::new(RwLock::new(fonts)),
     };
     let pages = Router::new()
-        .route("/", get(|| async { Redirect::to("/studio/") }))
-        .route(
-            "/labeldesigner/",
-            get(|| async { Redirect::to("/studio/") }),
-        )
-        .route("/studio", get(|| async { Redirect::to("/studio/") }))
-        .route("/studio/", get(index))
-        .nest_service(
-            "/studio/assets",
-            tower_http::services::ServeDir::new(assets),
-        )
+        .route("/", get(index))
+        .route("/labeldesigner/", get(|| async { Redirect::to("/") }))
+        .route("/studio", get(|| async { Redirect::to("/") }))
+        .route("/studio/", get(|| async { Redirect::to("/") }))
+        .nest_service("/assets", tower_http::services::ServeDir::new(assets))
         .nest_service(
             "/static/studio",
             tower_http::services::ServeDir::new(static_dir),
