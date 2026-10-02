@@ -264,21 +264,28 @@ fn cut(v: &Value) -> Result<&str> {
 async fn labels(State(s): State<AppState>) -> ApiResult<Json<Value>> {
     blocking(move || storage::list(&s.config, &registry(&s)?).map(Json)).await
 }
-fn record(s: &AppState, v: &Value, id: &str) -> Result<Value> {
+fn record(s: &AppState, v: &Value, id: uuid::Uuid) -> Result<Value> {
     let f = registry(s)?;
     let name = validation::string(&v["name"], "name", 100, false)?.trim();
     let d = validation::draft(&v["draft"], &s.config, &f, false)?;
     rendering::render(&d, &f, true)?;
-    let rec = json!({"version":1,"id":id,"name":name,"updatedAt":chrono::Utc::now().to_rfc3339(),"draft":d});
-    storage::write_json(&storage::path(&s.config, id)?, &rec)?;
+    let rec = json!({
+        "version": 1,
+        "id": id.to_string(),
+        "name": name,
+        "updatedAt": chrono::Utc::now().to_rfc3339(),
+        "draft": d,
+    });
+    storage::write_json(&storage::path(&s.config, id), &rec)?;
     storage::saved(rec, &f)
 }
 async fn save(State(s): State<AppState>, Json(v): Json<Value>) -> ApiResult<Response> {
-    let rec = blocking(move || record(&s, &v, &uuid::Uuid::new_v4().to_string())).await?;
+    let rec = blocking(move || record(&s, &v, uuid::Uuid::new_v4())).await?;
     Ok((StatusCode::CREATED, Json(rec)).into_response())
 }
 async fn load(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Json<Value>> {
-    let path = storage::path(&s.config, &id)?;
+    let id = uuid::Uuid::parse_str(&id).map_err(anyhow::Error::from)?;
+    let path = storage::path(&s.config, id);
     if !path.exists() {
         return Err(ApiError(StatusCode::NOT_FOUND, "Label not found".into()));
     }
@@ -296,13 +303,15 @@ async fn update(
     Path(id): Path<String>,
     Json(v): Json<Value>,
 ) -> ApiResult<Json<Value>> {
-    if !storage::path(&s.config, &id)?.exists() {
+    let id = uuid::Uuid::parse_str(&id).map_err(anyhow::Error::from)?;
+    if !storage::path(&s.config, id).exists() {
         return Err(ApiError(StatusCode::NOT_FOUND, "Label not found".into()));
     }
-    blocking(move || record(&s, &v, &id).map(Json)).await
+    blocking(move || record(&s, &v, id).map(Json)).await
 }
 async fn delete(State(s): State<AppState>, Path(id): Path<String>) -> ApiResult<Json<Value>> {
-    let path = storage::path(&s.config, &id)?;
+    let id = uuid::Uuid::parse_str(&id).map_err(anyhow::Error::from)?;
+    let path = storage::path(&s.config, id);
     tokio::fs::remove_file(path).await.map_err(|e| {
         ApiError(
             if e.kind() == std::io::ErrorKind::NotFound {

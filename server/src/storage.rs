@@ -20,10 +20,8 @@ pub fn write_json(path: &Path, value: &Value) -> Result<()> {
     tmp.persist(path)?;
     Ok(())
 }
-pub fn path(config: &Config, id: &str) -> Result<PathBuf> {
-    Ok(config
-        .labels_dir
-        .join(format!("{}.json", Uuid::parse_str(id)?)))
+pub fn path(config: &Config, id: Uuid) -> PathBuf {
+    config.labels_dir.join(format!("{id}.json"))
 }
 pub fn saved(mut v: Value, fonts: &Fonts) -> Result<Value> {
     for key in ["id", "name", "updatedAt", "draft"] {
@@ -87,7 +85,7 @@ fn seed(config: &Config, fonts: &Fonts) -> Result<()> {
             .any(|r| format!("{}.json", r["id"].as_str().unwrap()) == *f)
     }) {
         for record in records {
-            let p = path(config, record["id"].as_str().unwrap())?;
+            let p = path(config, Uuid::parse_str(record["id"].as_str().unwrap())?);
             if !p.exists() {
                 write_json(&p, &record)?;
             }

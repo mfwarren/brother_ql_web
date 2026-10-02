@@ -132,6 +132,12 @@ def check_api(client, require_decode=False):
     for invalid in invalids:
         # Serialize null explicitly instead of treating it as an absent request body.
         client.json('/studio/api/preview', 'POST', json.dumps(invalid).encode(), 400)
+    for identifier in ['../settings', '..\\settings', '/etc/passwd', 'not-a-uuid']:
+        path = '/studio/api/labels/' + urllib.parse.quote(identifier, safe='')
+        client.json(path, expected=400)
+        client.json(path, 'DELETE', expected=400)
+        client.json(path, 'PUT', {'name': 'Invalid path', 'draft': basic}, 400)
+    assert client.json('/studio/api/config')['defaults'] == config['defaults']
     saved_id = None
     original_defaults = config['defaults']
     try:
@@ -140,6 +146,7 @@ def check_api(client, require_decode=False):
         uuid.UUID(saved_id)
         assert saved['draft'] == basic, 'Legacy labels must not gain rich layout defaults'
         assert client.json('/studio/api/labels/' + saved_id)['draft'] == basic
+        assert client.json('/studio/api/labels/' + saved_id.upper())['id'] == saved_id
         assert any(item['id'] == saved_id for item in client.json('/studio/api/labels')['labels'])
         rich = draft(font, {'kind': 'text', 'text': 'Mixed type', 'paragraphs': [{'runs': [{'text': 'Mixed ', 'size': 30}, {'text': 'type', 'size': 18, 'underline': True}]}]}, verticalAlign='bottom', lineSpacing=120, margins={'top': 12, 'right': 23, 'bottom': 34, 'left': 15})
         updated = client.json('/studio/api/labels/' + saved_id, 'PUT', {'name': 'Updated HTTP contract test', 'draft': rich})
