@@ -2,6 +2,7 @@
 """Verify the optional image webhook against a disposable simulation server."""
 import argparse
 import base64
+import fcntl
 import importlib.util
 from pathlib import Path
 
@@ -12,6 +13,7 @@ spec.loader.exec_module(checks)
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--url', required=True)
 parser.add_argument('--password', required=True)
+parser.add_argument('--data-dir', type=Path, help='Local simulation data directory for printer-lock verification')
 args = parser.parse_args()
 client = checks.Client(args.url)
 client.assert_simulation()
@@ -20,6 +22,11 @@ image = (Path(__file__).parents[1] / 'server/tests/fixtures/2.png').read_bytes()
 body = {'images': [base64.b64encode(image).decode()], 'label_size': '62', 'image_mode': 'grayscale'}
 assert client.request(endpoint, 'POST', body, expected=401)[0]['success'] is False
 assert client.request(endpoint, 'POST', {**body, 'password': 'incorrect'}, expected=401)[0]['success'] is False
+if args.data_dir:
+    with (args.data_dir / 'printer.lock').open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        result, _ = client.request(endpoint, 'POST', {**body, 'password': args.password}, expected=400)
+        assert result['success'] is False and 'busy' in result['message'].lower(), result
 result, _ = client.request(endpoint, 'POST', body, headers={'Authorization': 'Bearer ' + args.password})
 assert result == {'success': True, 'count': 1}, result
 result, _ = client.request(endpoint, 'POST', {**body, 'password': args.password, 'orientation': 'rotated'})
@@ -59,3 +66,5 @@ for size in ['62', '29x90']:
     })
     assert result == {'success': True, 'count': 1}, result
 print('PASS webhook authentication, JSON images, rotation, multipart upload, and high-resolution Letter PDFs on continuous/fixed labels; simulation only')
+if args.data_dir:
+    print('PASS legacy webhook HTTP 400 response for printer-lock contention')

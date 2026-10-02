@@ -97,7 +97,7 @@ pub async fn print(State(s): State<AppState>, request: Request) -> Response {
     }
     match crate::api::blocking(move || process(&s, &params, images)).await {
         Ok(value) => Json(value).into_response(),
-        Err(e) => failure(e.0, e.1),
+        Err(e) => failure(StatusCode::BAD_REQUEST, e.1),
     }
 }
 fn process(s: &AppState, v: &Value, files: Vec<(String, Vec<u8>)>) -> Result<Value> {
