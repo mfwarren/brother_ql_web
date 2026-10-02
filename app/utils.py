@@ -40,9 +40,11 @@ def imgfile_to_image(file: FileStorage | BufferedReader) -> Image.Image:
 def pdffile_to_image(file: FileStorage, dpi: int) -> Image.Image:
     s = BytesIO()
     file.save(s)
-    s.seek(0)
-    im = convert_from_bytes(s.read(), dpi=dpi, first_page=1, last_page=1)[0]
-    return im
+    return pdf_bytes_to_image(s.getvalue(), dpi)
+
+
+def pdf_bytes_to_image(data: bytes, dpi: int) -> Image.Image:
+    return convert_from_bytes(data, dpi=dpi, first_page=1, last_page=1)[0]
 
 
 def image_to_png_bytes(im: Image.Image) -> bytes:

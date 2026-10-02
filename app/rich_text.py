@@ -3,11 +3,11 @@ import math
 import re
 
 from PIL import Image, ImageDraw, ImageFont, ImageChops
-from brother_ql.labels import ALL_LABELS, FormFactor
+from app.label_geometry import label_geometry, margins
 
 import app as app_module
 from app.labeldesigner.label import SimpleLabel
-from app.labeldesigner.enums import LabelContent, LabelOrientation, LabelType
+from app.labeldesigner.enums import LabelContent, LabelType
 
 
 def validate_paragraphs(paragraphs, plain_text):
@@ -131,20 +131,13 @@ def text_image(draft, width, height):
 
 
 def render_label(draft):
-    media = next(label for label in ALL_LABELS if label.identifier == draft['sizeId'])
-    width, height = media.dots_printable
-    if draft['highRes']:
-        width, height = width*2, height*2
-    if height > width:
-        width, height = height, width
-    rotated = draft['orientation'] == 'rotated'
-    if rotated:
-        width, height = height, width
-    left, right, top, bottom = (draft.get('margins', {}).get(side, draft['margin']) for side in ('left', 'right', 'top', 'bottom'))
+    geometry = label_geometry(draft)
+    width, height = geometry.width, geometry.height
+    left, right, top, bottom = margins(draft)
     if (width and width <= left+right) or (height and height <= top+bottom):
         raise ValueError('Margins leave no printable text area.')
     image = text_image(draft, width-left-right if width else 0, height-top-bottom if height else 0)
-    if 'verticalAlign' in draft and media.form_factor in (FormFactor.DIE_CUT, FormFactor.ROUND_DIE_CUT):
+    if 'verticalAlign' in draft and geometry.label_type in (LabelType.DIE_CUT_LABEL, LabelType.ROUND_DIE_CUT_LABEL):
         available = height - top - bottom
         bounds = ImageChops.difference(image, Image.new('RGB', image.size, 'white')).getbbox()
         if bounds:
@@ -153,8 +146,6 @@ def render_label(draft):
         aligned = Image.new('RGB', (image.width, available), 'white')
         aligned.paste(image, (0, offset))
         image = aligned
-    label_type = (LabelType.ENDLESS_LABEL if media.form_factor == FormFactor.ENDLESS else
-                  LabelType.DIE_CUT_LABEL if media.form_factor == FormFactor.DIE_CUT else LabelType.ROUND_DIE_CUT_LABEL)
     return SimpleLabel(width=width, height=height, label_content=LabelContent.IMAGE_COLORED,
-                       label_orientation=LabelOrientation.ROTATED if rotated else LabelOrientation.STANDARD,
-                       label_type=label_type, label_margin=(left, right, top, bottom), text=[], image=image)
+                       label_orientation=geometry.orientation,
+                       label_type=geometry.label_type, label_margin=(left, right, top, bottom), text=[], image=image)

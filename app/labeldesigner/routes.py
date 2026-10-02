@@ -10,7 +10,7 @@ from . import bp
 from .printer import PrinterQueue
 from app.printing import print_image_queue
 from .label import SimpleLabel, LabelContent, LabelOrientation, LabelType
-from .rendering import DEFAULT_DPI, _get_label_dimensions
+from app.label_geometry import DEFAULT_DPI, printable_dimensions
 from app.utils import convert_image_to_bw, convert_image_to_grayscale, convert_image_to_red_and_black, pdffile_to_image, imgfile_to_image
 
 HIGH_RES_DPI = 600
@@ -37,7 +37,7 @@ def _convert_image(img: Image.Image, image_mode: str, bw_threshold: int = 70) ->
 
 def _scale_image_to_label(img: Image.Image, label_size: str, orientation: str,
                           high_res: bool = False) -> Image.Image:
-    width, height = _get_label_dimensions(label_size, high_res)
+    width, height = printable_dimensions(label_size, high_res)
     # Normalize: width = printable width, height = printable height
     if height > width:
         width, height = height, width
@@ -164,7 +164,7 @@ def webhook_print():
         else:
             label_type = LabelType.ROUND_DIE_CUT_LABEL
 
-        width, height = _get_label_dimensions(label_size, high_res)
+        width, height = printable_dimensions(label_size, high_res)
         if height > width:
             width, height = height, width
         if label_orientation == LabelOrientation.ROTATED:
