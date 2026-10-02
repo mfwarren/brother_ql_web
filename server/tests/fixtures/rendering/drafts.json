@@ -1,0 +1,324 @@
+[
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 31,
+    "sizeId": "62",
+    "orientation": "standard",
+    "align": "center",
+    "color": "black",
+    "margin": 17,
+    "highRes": false,
+    "content": {
+      "kind": "text",
+      "text": "AV Coffee\nbeans & gyp"
+    }
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 31,
+    "sizeId": "62",
+    "orientation": "standard",
+    "align": "center",
+    "color": "black",
+    "margin": 17,
+    "highRes": false,
+    "content": {
+      "kind": "text",
+      "text": "AV Coffee\nbeans & gyp",
+      "paragraphs": [
+        {
+          "runs": [
+            {
+              "text": "AV Coffee",
+              "size": 33,
+              "underline": true
+            }
+          ]
+        },
+        {
+          "runs": [
+            {
+              "text": "beans & gyp",
+              "size": 24
+            }
+          ]
+        }
+      ]
+    },
+    "verticalAlign": "bottom",
+    "lineSpacing": 125
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 31,
+    "sizeId": "29x90",
+    "orientation": "standard",
+    "align": "center",
+    "color": "black",
+    "margin": 17,
+    "highRes": false,
+    "content": {
+      "kind": "text",
+      "text": "AV Coffee\nbeans & gyp"
+    }
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 31,
+    "sizeId": "29x90",
+    "orientation": "standard",
+    "align": "center",
+    "color": "black",
+    "margin": 17,
+    "highRes": false,
+    "content": {
+      "kind": "text",
+      "text": "AV Coffee\nbeans & gyp",
+      "paragraphs": [
+        {
+          "runs": [
+            {
+              "text": "AV Coffee",
+              "size": 33,
+              "underline": true
+            }
+          ]
+        },
+        {
+          "runs": [
+            {
+              "text": "beans & gyp",
+              "size": 24
+            }
+          ]
+        }
+      ]
+    },
+    "verticalAlign": "bottom",
+    "lineSpacing": 125
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 31,
+    "sizeId": "62",
+    "orientation": "rotated",
+    "align": "center",
+    "color": "black",
+    "margin": 17,
+    "highRes": false,
+    "content": {
+      "kind": "text",
+      "text": "AV Coffee\nbeans & gyp"
+    }
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 31,
+    "sizeId": "62",
+    "orientation": "rotated",
+    "align": "center",
+    "color": "black",
+    "margin": 17,
+    "highRes": false,
+    "content": {
+      "kind": "text",
+      "text": "AV Coffee\nbeans & gyp",
+      "paragraphs": [
+        {
+          "runs": [
+            {
+              "text": "AV Coffee",
+              "size": 33,
+              "underline": true
+            }
+          ]
+        },
+        {
+          "runs": [
+            {
+              "text": "beans & gyp",
+              "size": 24
+            }
+          ]
+        }
+      ]
+    },
+    "verticalAlign": "bottom",
+    "lineSpacing": 125
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 31,
+    "sizeId": "29x90",
+    "orientation": "rotated",
+    "align": "center",
+    "color": "black",
+    "margin": 17,
+    "highRes": false,
+    "content": {
+      "kind": "text",
+      "text": "AV Coffee\nbeans & gyp"
+    }
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 31,
+    "sizeId": "29x90",
+    "orientation": "rotated",
+    "align": "center",
+    "color": "black",
+    "margin": 17,
+    "highRes": false,
+    "content": {
+      "kind": "text",
+      "text": "AV Coffee\nbeans & gyp",
+      "paragraphs": [
+        {
+          "runs": [
+            {
+              "text": "AV Coffee",
+              "size": 33,
+              "underline": true
+            }
+          ]
+        },
+        {
+          "runs": [
+            {
+              "text": "beans & gyp",
+              "size": 24
+            }
+          ]
+        }
+      ]
+    },
+    "verticalAlign": "bottom",
+    "lineSpacing": 125
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 25,
+    "sizeId": "62red",
+    "orientation": "standard",
+    "align": "center",
+    "color": "black",
+    "margin": 19,
+    "highRes": false,
+    "content": {
+      "kind": "image",
+      "caption": "Picture",
+      "mode": "grayscale",
+      "fit": true,
+      "image": {
+        "name": "test.png",
+        "mime": "image/png",
+        "base64": "iVBORw0KGgoAAAANSUhEUgAAAEcAAAApCAIAAADoLKNiAAAAdElEQVR4nO3UsQ2AMAADQSNeZmxWp2ABSmz5CpQiDfrIh3SfEtL7/XL4/01k9aH0ry71obSV1Ye9wBisVQy2FjEobWX1YRsYg7WKwdYiBqWtrD5sA2OwVjHYWsSgtJXVh21gDNYqBluLGJS2svqwDYxBZasHt70DHyE9v5EAAAAASUVORK5CYII="
+      }
+    }
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 25,
+    "sizeId": "62red",
+    "orientation": "rotated",
+    "align": "center",
+    "color": "black",
+    "margin": 19,
+    "highRes": false,
+    "content": {
+      "kind": "image",
+      "caption": "Picture",
+      "mode": "grayscale",
+      "fit": true,
+      "image": {
+        "name": "test.png",
+        "mime": "image/png",
+        "base64": "iVBORw0KGgoAAAANSUhEUgAAAEcAAAApCAIAAADoLKNiAAAAdElEQVR4nO3UsQ2AMAADQSNeZmxWp2ABSmz5CpQiDfrIh3SfEtL7/XL4/01k9aH0ry71obSV1Ye9wBisVQy2FjEobWX1YRsYg7WKwdYiBqWtrD5sA2OwVjHYWsSgtJXVh21gDNYqBluLGJS2svqwDYxBZasHt70DHyE9v5EAAAAASUVORK5CYII="
+      }
+    }
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 25,
+    "sizeId": "62red",
+    "orientation": "standard",
+    "align": "center",
+    "color": "black",
+    "margin": 19,
+    "highRes": false,
+    "content": {
+      "kind": "image",
+      "caption": "Picture",
+      "mode": "red",
+      "fit": true,
+      "image": {
+        "name": "test.png",
+        "mime": "image/png",
+        "base64": "iVBORw0KGgoAAAANSUhEUgAAAEcAAAApCAIAAADoLKNiAAAAdElEQVR4nO3UsQ2AMAADQSNeZmxWp2ABSmz5CpQiDfrIh3SfEtL7/XL4/01k9aH0ry71obSV1Ye9wBisVQy2FjEobWX1YRsYg7WKwdYiBqWtrD5sA2OwVjHYWsSgtJXVh21gDNYqBluLGJS2svqwDYxBZasHt70DHyE9v5EAAAAASUVORK5CYII="
+      }
+    }
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 25,
+    "sizeId": "62red",
+    "orientation": "rotated",
+    "align": "center",
+    "color": "black",
+    "margin": 19,
+    "highRes": false,
+    "content": {
+      "kind": "image",
+      "caption": "Picture",
+      "mode": "red",
+      "fit": true,
+      "image": {
+        "name": "test.png",
+        "mime": "image/png",
+        "base64": "iVBORw0KGgoAAAANSUhEUgAAAEcAAAApCAIAAADoLKNiAAAAdElEQVR4nO3UsQ2AMAADQSNeZmxWp2ABSmz5CpQiDfrIh3SfEtL7/XL4/01k9aH0ry71obSV1Ye9wBisVQy2FjEobWX1YRsYg7WKwdYiBqWtrD5sA2OwVjHYWsSgtJXVh21gDNYqBluLGJS2svqwDYxBZasHt70DHyE9v5EAAAAASUVORK5CYII="
+      }
+    }
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 25,
+    "sizeId": "62red",
+    "orientation": "standard",
+    "align": "center",
+    "color": "black",
+    "margin": 19,
+    "highRes": false,
+    "content": {
+      "kind": "image",
+      "caption": "Picture",
+      "mode": "bw",
+      "fit": true,
+      "image": {
+        "name": "test.png",
+        "mime": "image/png",
+        "base64": "iVBORw0KGgoAAAANSUhEUgAAAEcAAAApCAIAAADoLKNiAAAAdElEQVR4nO3UsQ2AMAADQSNeZmxWp2ABSmz5CpQiDfrIh3SfEtL7/XL4/01k9aH0ry71obSV1Ye9wBisVQy2FjEobWX1YRsYg7WKwdYiBqWtrD5sA2OwVjHYWsSgtJXVh21gDNYqBluLGJS2svqwDYxBZasHt70DHyE9v5EAAAAASUVORK5CYII="
+      }
+    }
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 25,
+    "sizeId": "62red",
+    "orientation": "rotated",
+    "align": "center",
+    "color": "black",
+    "margin": 19,
+    "highRes": false,
+    "content": {
+      "kind": "image",
+      "caption": "Picture",
+      "mode": "bw",
+      "fit": true,
+      "image": {
+        "name": "test.png",
+        "mime": "image/png",
+        "base64": "iVBORw0KGgoAAAANSUhEUgAAAEcAAAApCAIAAADoLKNiAAAAdElEQVR4nO3UsQ2AMAADQSNeZmxWp2ABSmz5CpQiDfrIh3SfEtL7/XL4/01k9aH0ry71obSV1Ye9wBisVQy2FjEobWX1YRsYg7WKwdYiBqWtrD5sA2OwVjHYWsSgtJXVh21gDNYqBluLGJS2svqwDYxBZasHt70DHyE9v5EAAAAASUVORK5CYII="
+      }
+    }
+  }
+]

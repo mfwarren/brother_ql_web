@@ -1,106 +1,81 @@
-# Install and run Label Studio
+# Install Label Studio
 
-Label Studio is a React/TypeScript interface served by Flask and Waitress. Python renders the preview and sends Brother raster commands. Node is only needed when building from Git; it is not a running service on the printer host.
+Label Studio uses a Rust server and a React interface. The server renders labels, stores your library, and talks directly to the Brother printer. Python and Node are not needed to run it; Node is needed only to build the interface.
 
-## Quick start: simulator
+## Build from source
 
-Use Python 3.11 or newer. On Debian/Raspberry Pi OS, install the system dependencies:
+On Raspberry Pi OS or Debian:
 
 ```sh
 sudo apt update
-sudo apt install python3-venv python3-dev build-essential fonts-dejavu-core libusb-1.0-0 poppler-utils
+sudo apt install build-essential pkg-config libfreetype6-dev fonts-dejavu-core poppler-utils ca-certificates
 ```
 
-Download and extract `label-studio-v0.1.0.tar.gz` from the [release page](https://github.com/mfwarren/brother_ql_web/releases). This archive includes the built frontend. GitHub's automatic source archives require the frontend build below.
-
-From the extracted directory:
+Install Rust 1.94 or newer using [rustup](https://rustup.rs/). Build the interface on a computer with Node 24 or newer, then build the server:
 
 ```sh
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements-server.txt
-mkdir -p instance
-```
-
-Create `instance/application.py`:
-
-```python
-PRINTER_MODEL = 'QL-800'
-PRINTER_PRINTER = 'simulation'
-SERVER_HOST = '127.0.0.1'
-SERVER_PORT = 8014
-```
-
-Start the server:
-
-```sh
-.venv/bin/python serve.py
-```
-
-Open <http://127.0.0.1:8014/studio/>. **Test print** creates a raster job and PNG under `simulated_labels/`; it uses no paper. Old `/labeldesigner/` bookmarks redirect to Studio.
-
-## Build from Git
-
-Use Node 24 and npm 11.19.0 (the CI toolchain):
-
-```sh
-git clone --branch master https://github.com/mfwarren/brother_ql_web.git
-cd brother_ql_web
-npx --yes npm@11.19.0 ci --prefix frontend
+npm ci --prefix frontend
 npm run build --prefix frontend
+cargo build --manifest-path server/Cargo.toml --locked --release
 ```
 
-Then follow the Python setup above. For frontend development, run the Python server on port 8014 and `npm run dev --prefix frontend`; Vite proxies API calls to that server.
+On a Pi with limited memory, set `CARGO_BUILD_JOBS=1` for the Cargo command. The binary is built for the computer where Cargo runs. Copying a Mac binary onto a Pi will not work.
+
+## Try the simulator
+
+Run from the repository directory:
+
+```sh
+PRINTER_PRINTER=simulation FONT_FOLDER=.local-fonts \
+  SERVER_HOST=127.0.0.1 SERVER_PORT=8013 \
+  server/target/release/label-studio-server
+```
+
+`FONT_FOLDER` is optional; the server also discovers installed system fonts. Open `http://127.0.0.1:8013/studio/`. Simulated prints produce files without using a printer. Nine sample labels appear in a new library.
 
 ## Connect a printer
 
-For a Linux USB QL-800 exposed through `usblp`, change the configuration:
-
-```python
-PRINTER_MODEL = 'QL-800'
-PRINTER_PRINTER = 'file:///dev/usb/lp0'
-SERVER_HOST = '0.0.0.0'
-```
-
-Restart the server. The service account needs access to the USB device (commonly the `lp` group). Check the Printer page before printing. See [Raspberry Pi deployment](deploy/README.md) for a port-80 systemd service.
-
-This is a shared-printer app without user accounts. Run it on a trusted local network; do not expose its printing and settings endpoints directly to the internet. Publishing this repository does not publish your printer or saved labels.
-
-## Editing and storage
-
-- Select words to change font family, style, pixel size, or underline. Fixed-size text labels offer Top, Center, and Bottom alignment.
-- Preview updates keep the existing image visible until the replacement is ready. The server preview is the printed layout; the text editor is an editing surface.
-- Save, duplicate, and reprint labels with their paper settings. New libraries include nine samples, including a black/red Fragile label.
-- Settings controls defaults and local font installation. Google Fonts are downloaded from the official repository with their licenses. Original variable fonts render directly; weights and italics need no slow conversion. TTF/OTF uploads are supported.
-- New labels can follow detected media. Saved labels retain their roll settings, and mismatches are checked again before printing.
-
-Modern labels use versioned JSON in `instance/studio-labels/`, or `STUDIO_LABELS_DIR`. Settings and installed fonts live beside that directory, or under `STUDIO_DATA_DIR`. Back up the complete data directory, including hidden files. Existing classic label files are preserved on disk; Studio does not import them.
-
-Samples are seeded once; deleted samples stay deleted. Set `STUDIO_SEED_SAMPLES = False` to disable seeding. To add missing samples to an existing library, preserving existing sample IDs and edits:
+On Linux, the kernel's `usblp` driver exposes the printer at `/dev/usb/lp0`. Give the service account access through the `lp` group. Start the server with:
 
 ```sh
-.venv/bin/python -c 'from app import create_app; from app.label_store import seed_starter_labels; app = create_app(); ctx = app.app_context(); ctx.push(); seed_starter_labels(add_to_existing=True)'
+PRINTER_PRINTER=file:///dev/usb/lp0 PRINTER_MODEL=QL-800 \
+  SERVER_HOST=0.0.0.0 SERVER_PORT=8013 \
+  server/target/release/label-studio-server
 ```
 
-## Compatibility and limits
+Open `http://<printer-host>:8013/studio/`. Check the detected roll on the Printer page before printing. A `tcp://host:9100` connection is also supported; network printers cannot supply the same USB status checks.
 
-The primary tested setup is a QL-800 attached by USB to a Raspberry Pi 3 running 32-bit Raspberry Pi OS 12. Physical printing and roll swaps were exercised with 62 mm black-only, 62 mm black/red, and 29 × 90 mm die-cut stock. Other models are inherited from the driver and need community testing. Container deployment is not verified for this release.
+For automatic startup on port 80, use the [service guide](deploy/README.md).
 
-The [Linux Auto Power Off utility](docs/linux-power-settings.md) changed a real QL-800 from 60 minutes to disabled and verified the read-back. Long idle periods and persistence after a power cycle remain unverified. The app cannot wake a physically powered-off printer.
+## Configuration and persistent data
 
-Hardware density adjustment is not implemented. See [QL-800 notes](docs/ql800.md), [media detection](docs/usb-status.md), [roll catalog](docs/label-roll-catalog.md), and [font/rendering details](docs/rich-text-and-fonts.md).
+Use `LABEL_STUDIO_CONFIG=/path/application.json` to load a JSON configuration. Start with [the example](deploy/application.json.example). Environment variables override the matching host settings:
 
-## Verification
+| Variable | Purpose |
+| --- | --- |
+| `PRINTER_PRINTER` | `simulation`, `file:///dev/usb/lp0`, or a printer URI |
+| `PRINTER_MODEL` | Brother model, such as `QL-800` |
+| `SERVER_HOST`, `SERVER_PORT` | Listening address and port |
+| `STUDIO_DATA_DIR` | Settings, fonts, printer lock, and job records |
+| `STUDIO_LABELS_DIR` | Saved-label directory; defaults to `labels` under an explicit data directory |
+| `STUDIO_STATIC_DIR` | Built frontend directory |
+| `FONT_FOLDER` | Additional font directory |
+| `WEBHOOK_PASSWORD` | Enables the authenticated image-printing webhook |
+
+Set paper, typeface, orientation, and margin defaults in the app's Settings page. Those defaults persist in `settings.json`. Fonts remain in `fonts/`, and each saved label remains a JSON document. Back up the whole data directory, including hidden sample markers. Deleting an example does not cause it to reappear at the next startup.
+
+The Rust server reads existing Studio label documents, installed font manifests, and `settings.json` directly. Host configuration has changed from executable Python to JSON; copy your printer model, device, and data paths into the example. Keep the previous service and a data backup until you have verified the replacement.
+
+## Development checks
 
 ```sh
-.venv/bin/python -m pip install -r requirements-dev.txt
-.venv/bin/python -m pytest tests/test_studio.py tests/test_studio_qr.py tests/test_studio_barcodes.py tests/test_bulk_labels.py tests/test_remote_images.py tests/test_printer_settings.py tests/test_studio_samples.py tests/test_studio_preferences.py tests/test_usb_transport.py tests/test_rich_text.py tests/test_webhook.py tests/test_text_rendering.py -q
-node --experimental-strip-types frontend/title-checks.mjs
+cargo test --manifest-path server/Cargo.toml --locked
+cargo clippy --manifest-path server/Cargo.toml --all-targets -- -D warnings
 node --experimental-strip-types frontend/rich-text-checks.mjs
+node --experimental-strip-types frontend/title-checks.mjs
 npm run build --prefix frontend
 ```
 
-Tests cover rendering, QR decoding, persistence, font weights, formatting, alignment, stock checks, and USB transport. Browser checks cover desktop, tablet, and phone viewports; these are not physical iOS-device tests. Legacy PNG snapshot tests remain a separate manual workflow because their original routes and exact artwork differ from Studio.
+The optional HTTP checks in `tools/check_rust_api.py`, `tools/check_webhook.py`, and `tools/check_http_admission.py` run against a disposable simulation server. The [CI workflow](.github/workflows/studio.yml) includes the server startup, development dependency installation, and check commands. Python is only a development tool; it is not part of the running Rust service.
 
-## Text spacing and margins
-
-Use **Spacing** in the text toolbar to set line spacing from 100% to 300%. In **Label settings**, margins are linked by default; turn off **Link sides** to adjust each side. Margins reduce the text area and affect wrapping. **Show margin guides** overlays the usable area in the preview only, including rotated labels. Saved labels and bulk templates retain spacing and margins.
+`tools/update_font_catalog.py` refreshes the bundled Google Fonts catalog for future releases. It uses only the Python standard library and is not needed to install fonts through the app.

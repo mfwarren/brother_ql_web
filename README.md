@@ -43,8 +43,8 @@ Black/red printing requires a compatible printer and black/red label roll. The F
 
 ## Get started
 
-1. [Download the latest release](https://github.com/mfwarren/brother_ql_web/releases/latest). Choose the `label-studio` archive, which includes the built web interface.
-2. Follow the [installation guide](STUDIO.md) on your Raspberry Pi or Linux computer. You can try the simulator before connecting a printer.
+1. Follow the [installation guide](STUDIO.md) to build the Rust server and web interface on your Raspberry Pi or Linux computer.
+2. Try the simulator before connecting a printer.
 3. Connect your printer, open Label Studio in a browser, and check the Printer page. Choose a sample or create your first label.
 
 For a printer host that starts automatically and serves the app on port 80, follow the [Raspberry Pi service guide](deploy/README.md).

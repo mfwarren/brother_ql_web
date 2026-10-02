@@ -7,4 +7,5 @@ instance
 simulated_labels
 app/static/studio
 **/__pycache__
-tests/FAILED*
+
+server/target

@@ -8,4 +8,4 @@ The classic editor's repository, preview, print, barcode-list, and printer-disco
 
 Studio labels are stored in `STUDIO_LABELS_DIR`; preferences and fonts live under `STUDIO_DATA_DIR`. Existing classic label files are not deleted or imported. Keep an older installation and its backup if you need to access that format. Studio labels and bulk templates retain their own paper and formatting settings.
 
-Production installations use `requirements-server.txt`. Test tools are installed separately with `requirements-dev.txt`.
+Production installations use the Rust server binary and built React files. See [the installation guide](../STUDIO.md).

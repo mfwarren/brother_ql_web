@@ -1,21 +1,22 @@
 # Code structure
 
-The frontend keeps the current draft and navigation in `frontend/src/App.tsx`. Content, paper settings, and the preview are separate components under `frontend/src/editor/`. `useLabelPreview.ts` owns debouncing, cancellation, image decoding, and object-URL cleanup; it retains the last image while a new render loads. Bulk editing uses the same content panel and preview.
+The React frontend keeps the current draft and navigation in `frontend/src/App.tsx`. Content, paper settings, and preview components live under `frontend/src/editor/`. `useLabelPreview.ts` owns debouncing, cancellation, image decoding, and object-URL cleanup. Bulk editing uses the same editor and preview.
 
-Backend responsibilities:
+The Rust server lives in `server/`:
 
-- `studio.py`: HTTP endpoints and response formatting.
-- `studio_api.py`: shared blueprint, JSON request limits, and input-error responses.
-- `validation.py`: label and field validation.
-- `label_store.py`: saved labels, atomic JSON writes, and sample seeding.
-- `rendering.py`: validated drafts to printable labels, without converting them through form fields.
-- `label_geometry.py`: printable dimensions, orientation, and margins.
-- `text_rendering.py`: one entry point for text normalization and rendering. A small compatibility path preserves the original spacing and placement of older plain labels without rewriting stored files.
-- `rich_text.py`: formatted text layout and rasterization.
-- `printer_service.py`: device selection, printer locking, and status interpretation.
-- `printing.py`: media checks, queue submission, and bulk-job duplicate protection.
-- `labeldesigner/`: the shared raster/USB backend and the authenticated image webhook.
+- `api.rs` handles HTTP requests, response formats, and background work.
+- `validation.rs` checks drafts and formatting at the API boundary.
+- `storage.rs` saves JSON atomically and seeds the sample library once.
+- `rendering.rs` lays out text, QR codes, barcodes, images, and PDFs. Its legacy text path preserves older labels' ink-based spacing.
+- `fonts.rs` discovers fonts and manages downloaded/uploaded variable fonts without converting their outlines.
+- `csv_input.rs` parses CSV; `bulk.rs` substitutes literal fields while preserving text styles.
+- `remote_images.rs` fetches bounded public HTTPS images, validates every redirect, and pins the resolved destination.
+- `media.rs` contains printer and roll profiles.
+- `printer.rs` generates Brother raster commands, decodes status, checks media, and sends jobs over USB or TCP.
+- `power.rs` implements the QL-800 power-setting utility.
+- `webhook.rs` handles the optional authenticated image webhook.
+- `config.rs` loads JSON host configuration and environment overrides.
 
-The printer lock covers media checks and submission. Bulk jobs validate every raster before sending anything, and write a submission record before the first send. A failed or interrupted submitted job cannot be silently retried with the same job ID.
+The printer lock covers media checks and submission. Bulk jobs validate every raster before sending anything, and write a submission record before the first send. A failed or interrupted submitted job cannot be retried with the same job ID.
 
-For rendering refactors, capture a baseline with `python tools/render_reference.py capture /tmp/render.json`, make the change, then run `python tools/render_reference.py compare /tmp/render.json`. Use the same host and installed fonts for both runs. The tool compares PNG hashes across paper, orientation, resolution, and content variants; it never sends labels to a printer.
+Rendering and driver fixtures test output against the Python implementation. Rust unit tests also cover variable fonts, media detection, USB framing, deadlines, CSV substitution, remote-image address restrictions, and locking. The previous Python implementation is available in Git history. Python is used only by optional development verification and font-catalog maintenance tools; it is not invoked by the Rust process.
