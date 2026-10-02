@@ -34,13 +34,19 @@ try:
         # Leave the body incomplete so the extractor must retain its slot.
         connection.sendall((
             f'POST /studio/api/preview HTTP/1.1\r\nHost: {host}\r\n'
-            'Content-Type: application/json\r\nContent-Length: 8388608\r\n\r\n'
-        ).encode() + b'{"text":"' + b'A' * 262144)
-    for _ in range(40):
-        status, body, retry = request('/studio/api/config')
-        if status == 503:
-            break
-        time.sleep(0.05)
+            'Content-Type: application/json\r\nContent-Length: 8388608\r\n'
+            'Expect: 100-continue\r\n\r\n'
+        ).encode())
+        # Hyper sends Continue only when the admitted handler begins reading.
+        # Otherwise the probe can take the fourth slot before this upload does.
+        response = b''
+        while b'\r\n\r\n' not in response:
+            chunk = connection.recv(4096)
+            assert chunk, 'Upload connection closed before admission.'
+            response += chunk
+        assert response.startswith(b'HTTP/1.1 100 '), response
+        connection.sendall(b'{"text":"' + b'A' * 262144)
+    status, body, retry = request('/studio/api/config')
     assert status == 503 and retry == '1', (status, body, retry)
     assert 'busy' in json.loads(body)['message'].lower()
     assert request('/studio/')[0] == 200, 'Static interface must remain available.'
