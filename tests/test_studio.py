@@ -14,7 +14,7 @@ from PIL import Image
 from werkzeug.datastructures import FileStorage
 
 from app import create_app
-from app.studio import _status_from_raw
+from app.printer_service import status_from_raw
 from app.labeldesigner.printer import query_printer_status
 from app.utils import pdffile_to_image
 
@@ -150,13 +150,13 @@ def test_ql800_size_catalog_and_status_require_loaded_matching_roll(client):
            'phase_type': 'Waiting to receive', 'media_type': 'Continuous length tape',
            'media_width': 62, 'media_length': 0, 'errors': []}
     with client.application.app_context():
-        ready = _status_from_raw(raw, 'QL-800', '62')
+        ready = status_from_raw(raw, 'QL-800', '62')
         assert ready['state'] == 'ready'
         assert ready['media'] == '62 mm Continuous length tape'
-        assert _status_from_raw(raw, 'QL-800', '29')['state'] == 'error'
-        assert _status_from_raw({**raw, 'media_type': 'No media', 'media_width': 0}, 'QL-800')['state'] == 'error'
-        assert _status_from_raw({**raw, 'phase_type': 'Printing state'}, 'QL-800')['state'] == 'busy'
-        assert _status_from_raw({**raw, 'model': 'QL-700'}, 'QL-800')['state'] == 'error'
+        assert status_from_raw(raw, 'QL-800', '29')['state'] == 'error'
+        assert status_from_raw({**raw, 'media_type': 'No media', 'media_width': 0}, 'QL-800')['state'] == 'error'
+        assert status_from_raw({**raw, 'phase_type': 'Printing state'}, 'QL-800')['state'] == 'busy'
+        assert status_from_raw({**raw, 'model': 'QL-700'}, 'QL-800')['state'] == 'error'
 
 
 def test_request_limit_rejects_large_json(client):
@@ -249,12 +249,12 @@ def test_print_rechecks_changed_roll_before_render_or_send(client, monkeypatch, 
     def query(device):
         calls.append(device)
         return dict(raw)
-    monkeypatch.setattr(studio, 'query_printer_status', query)
+    monkeypatch.setattr('app.printer_service.query_printer_status', query)
     label = draft(client)
     label['sizeId'] = '62'
     assert client.get('/studio/api/status').json['matchingSizes'] == ['62']
     raw.update(loaded)
-    monkeypatch.setattr(studio, '_render', lambda *args: pytest.fail('Rendered a mismatched job'))
+    monkeypatch.setattr(studio, 'render', lambda *args: pytest.fail('Rendered a mismatched job'))
     monkeypatch.setattr(studio.PrinterQueue, 'process_queue', lambda *args: pytest.fail('Sent a mismatched job'))
     result = client.post('/studio/api/print', json={
         'draft': label, 'copies': 1, 'cut': 'each', 'confirmRedMedia': True})

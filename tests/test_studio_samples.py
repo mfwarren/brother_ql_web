@@ -1,7 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 
 from test_studio import client, draft, assert_png
-from app.studio import seed_starter_labels
+from app.label_store import seed_starter_labels
 
 
 def test_first_install_samples_render_and_print_in_simulator(client):
@@ -92,15 +92,15 @@ def test_red_media_requires_confirmation_before_printing(client, monkeypatch):
     from app import studio
     client.application.config['STUDIO_SEED_SAMPLES'] = True
     fragile = next(label for label in client.get('/studio/api/labels').json['labels'] if label['draft']['sizeId'] == '62red')
-    monkeypatch.setattr(studio, '_device', lambda: 'file:///dev/test-printer')
+    monkeypatch.setattr(studio, 'device', lambda: 'file:///dev/test-printer')
     calls = []
     def status(device, size):
         calls.append(size)
         return {'state': 'ready', 'message': 'Test ready'}
-    monkeypatch.setattr(studio, '_status_locked', status)
+    monkeypatch.setattr(studio, 'status_locked', status)
     body = {'draft': fragile['draft'], 'copies': 1, 'cut': 'each'}
     assert client.post('/studio/api/print', json=body).status_code == 400
     assert calls == ['62red']
-    monkeypatch.setattr(studio, '_status_locked', lambda device, size: {'state': 'offline', 'message': 'Offline'})
+    monkeypatch.setattr(studio, 'status_locked', lambda device, size: {'state': 'offline', 'message': 'Offline'})
     assert client.post('/studio/api/print', json={**body, 'confirmRedMedia': True}).status_code == 503
     assert calls == ['62red']

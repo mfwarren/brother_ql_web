@@ -224,13 +224,13 @@ def test_line_spacing_changes_distance_and_survives_save(client):
 
 @pytest.mark.parametrize('orientation', ['standard', 'rotated'])
 def test_asymmetric_margins_bound_text_and_position_top(client, orientation):
-    from app.studio import _render
+    from app.rendering import render
     value = rich_draft(client)
     value.update(sizeId='29x90', fontSize=20, orientation=orientation, align='left', verticalAlign='top',
                  margins={'top': 17, 'right': 22, 'bottom': 31, 'left': 43})
     value['content'] = {'kind': 'text', 'text': 'Hello', 'paragraphs': [{'runs': [{'text': 'Hello'}]}]}
     with client.application.app_context():
-        image = _render(value, None).generate()
+        image = render(value, None).generate()
     bounds = ImageChops.difference(image, Image.new('RGB', image.size, 'white')).getbbox()
     assert bounds[1] == 17
     assert 43 <= bounds[0] <= 48

@@ -14,7 +14,9 @@ from fontTools.ttLib import TTFont
 
 from app.managed_fonts import inspect_faces, register_faces
 import app as app_module
-from app.studio import bp, InputError, _body, _int, _sizes, _string, _write_record
+from app.studio_api import bp, body
+from app.validation import InputError, integer, sizes, string
+from app.label_store import write_json
 
 FONT_LIMIT = 8 * 1024 * 1024
 _font_lock = threading.Lock()
@@ -58,12 +60,12 @@ def defaults():
 
 @bp.route('/api/settings', methods=['PUT'])
 def save_defaults():
-    value = _body()
-    _string(value.get('font'), 'font', 200)
-    _string(value.get('sizeId'), 'label roll', 32)
+    value = body()
+    string(value.get('font'), 'font', 200)
+    string(value.get('sizeId'), 'label roll', 32)
     if value.get('font') not in {font['id'] for font in font_list()}:
         raise InputError('Choose an installed font.')
-    if value.get('sizeId') not in {size.identifier for size in _sizes()}:
+    if value.get('sizeId') not in {size.identifier for size in sizes()}:
         raise InputError('Choose a supported label roll.')
     if value.get('orientation') not in ('standard', 'rotated'):
         raise InputError('Choose a valid orientation.')
@@ -71,11 +73,11 @@ def save_defaults():
     if not isinstance(value.get('autoDetectRoll', True), bool):
         raise InputError('Automatic roll detection must be on or off.')
     clean['autoDetectRoll'] = value.get('autoDetectRoll', True)
-    clean['margin'] = _int(value.get('margin'), 'Margin', 0, 100)
-    clean['fontSize'] = _int(value.get('fontSize'), 'Font size', 8, 200)
+    clean['margin'] = integer(value.get('margin'), 'Margin', 0, 100)
+    clean['fontSize'] = integer(value.get('fontSize'), 'Font size', 8, 200)
     directory = data_dir(current_app)
     directory.mkdir(parents=True, exist_ok=True)
-    _write_record(directory / 'settings.json', {'version': 1, 'defaults': clean})
+    write_json(directory / 'settings.json', {'version': 1, 'defaults': clean})
     return {'defaults': clean}
 
 
@@ -128,7 +130,7 @@ def _install_files(files, directory, *, family_name=None, extra=None):
             regular = min(faces, key=lambda face: (face['italic'], abs(face['weight']-400)))
             new_name = f"{regular['family']},{regular['style']}"
             if old_name != new_name:
-                _write_record(destination / 'aliases.json', {old_name: new_name})
+                write_json(destination / 'aliases.json', {old_name: new_name})
         # Data files precede the manifest; each original font stays unchanged.
         for filename, data in {**files, **(extra or {})}.items():
             fd, temporary = tempfile.mkstemp(dir=destination, prefix='.font-')
@@ -139,13 +141,13 @@ def _install_files(files, directory, *, family_name=None, extra=None):
             finally:
                 if os.path.exists(temporary):
                     os.unlink(temporary)
-        _write_record(destination / 'faces.json', faces)
+        write_json(destination / 'faces.json', faces)
         return _installed_result(destination)
 
 
 @bp.route('/api/fonts/install', methods=['POST'])
 def install_google_font():
-    family_id = _string(_body().get('id'), 'font family', 150)
+    family_id = string(body().get('id'), 'font family', 150)
     family = next((f for f in catalog()['families'] if f['id'] == family_id), None)
     if family is None:
         raise InputError('Choose a font from the catalog.')

@@ -81,23 +81,23 @@ def test_google_catalog_and_install_keeps_license(client, isolated_fonts, monkey
 
 
 def test_detected_roll_matches_dimensions(client):
-    from app.studio import _status_from_raw
+    from app.printer_service import status_from_raw
     raw = {'model':'QL-800', 'media_type':'Continuous length tape', 'media_width':62, 'media_length':0,
            'status_type':'Reply to status request', 'status_code':0, 'phase_type':'Waiting to receive'}
     with client.application.app_context():
-        assert set(_status_from_raw(raw, 'QL-800')['matchingSizes']) == {'62', '62red'}
+        assert set(status_from_raw(raw, 'QL-800')['matchingSizes']) == {'62', '62red'}
 
 
 def test_die_cut_roll_includes_length_and_has_one_match(client):
     from app.labeldesigner.usb_transport import decode_status
-    from app.studio import _status_from_raw
+    from app.printer_service import status_from_raw
     raw = decode_status(bytes.fromhex('802042343830000000001d0b00000100005a0000000000000001000000000000'))
     with client.application.app_context():
-        status = _status_from_raw(raw, 'QL-800')
+        status = status_from_raw(raw, 'QL-800')
         assert status['media'] == '29 × 90 mm Die-cut labels (black only)'
         assert status['matchingSizes'] == ['29x90']
-        assert _status_from_raw(raw, 'QL-800', '29')['state'] == 'error'
-        assert _status_from_raw(raw, 'QL-800', '29x90')['state'] == 'ready'
+        assert status_from_raw(raw, 'QL-800', '29')['state'] == 'error'
+        assert status_from_raw(raw, 'QL-800', '29x90')['state'] == 'ready'
 
 
 def test_existing_settings_enable_detection_without_changing_fallback(client):
@@ -152,9 +152,9 @@ def test_catalog_filters_printer_families_and_color_capability():
     ('54', 54, 0, 'Continuous length tape'),
 ])
 def test_other_roll_status_dimensions_match_existing_geometry(client, identifier, width, length, media_type):
-    from app.studio import _status_from_raw
+    from app.printer_service import status_from_raw
     raw = {'model':'QL-800', 'media_type':media_type, 'media_width':width, 'media_length':length,
            'media_color':'black', 'status_type':'Reply to status request', 'status_code':0,
            'phase_type':'Waiting to receive'}
     with client.application.app_context():
-        assert _status_from_raw(raw, 'QL-800')['matchingSizes'] == [identifier]
+        assert status_from_raw(raw, 'QL-800')['matchingSizes'] == [identifier]

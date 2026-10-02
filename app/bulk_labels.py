@@ -104,7 +104,7 @@ def merge(template, values):
 
 
 def prepare(data):
-    from app.studio import _validate_draft
+    from app.validation import validate_draft
     template = data.get('template')
     if not isinstance(template, dict) or not isinstance(template.get('content'), dict):
         raise ValueError('Choose a label template.')
@@ -130,7 +130,7 @@ def prepare(data):
                 raise ValueError(row['error'])
             values = {**row['values'], '@today': now.strftime('%Y-%m-%d'),
                       '@time': now.strftime('%H:%M'), '@row': str(number), '@total': str(len(rows))}
-            draft, _ = _validate_draft(merge(template, values), allow_image_url=True)
+            draft, _ = validate_draft(merge(template, values), allow_image_url=True)
             results.append({'row': number, 'line': row['line'], 'kind': 'ready', 'draft': draft})
         except (ValueError, KeyError, TypeError) as error:
             results.append({'row': number, 'line': row['line'], 'kind': 'error', 'message': str(error)})

@@ -97,35 +97,35 @@ def test_silent_printer_does_not_leave_open_usb_handle(monkeypatch):
 
 def test_detected_red_stock_selects_exact_roll_and_rejects_wrong_job():
     from app import create_app
-    from app.studio import _status_from_raw
+    from app.printer_service import status_from_raw
     app = create_app()
     with app.app_context():
         raw = usb.decode_status(packet(color=0x81))
-        detected = _status_from_raw(raw, 'QL-800')
+        detected = status_from_raw(raw, 'QL-800')
         assert detected['matchingSizes'] == ['62red']
         assert detected['mediaColor'] == 'black-red'
         assert '(black/red)' in detected['media']
-        assert _status_from_raw(raw, 'QL-800', '62')['state'] == 'error'
-        assert _status_from_raw(raw, 'QL-800', '62red')['state'] == 'ready'
+        assert status_from_raw(raw, 'QL-800', '62')['state'] == 'error'
+        assert status_from_raw(raw, 'QL-800', '62red')['state'] == 'ready'
 
 
 def test_verified_black_roll_excludes_red_and_rejects_red_job():
     from app import create_app
-    from app.studio import _status_from_raw
+    from app.printer_service import status_from_raw
     app = create_app()
     raw = usb.decode_status(bytes.fromhex('802042343830000000003e0a0000150000000000000000000001000000000000'))
     with app.app_context():
-        assert _status_from_raw(raw, 'QL-800')['matchingSizes'] == ['62']
-        assert _status_from_raw(raw, 'QL-800')['mediaColor'] == 'black'
-        assert _status_from_raw(raw, 'QL-800', '62red')['state'] == 'error'
-        assert _status_from_raw(raw, 'QL-800', '62')['state'] == 'ready'
+        assert status_from_raw(raw, 'QL-800')['matchingSizes'] == ['62']
+        assert status_from_raw(raw, 'QL-800')['mediaColor'] == 'black'
+        assert status_from_raw(raw, 'QL-800', '62red')['state'] == 'error'
+        assert status_from_raw(raw, 'QL-800', '62')['state'] == 'ready'
 
 
 def test_verified_red_roll_has_one_match():
     from app import create_app
-    from app.studio import _status_from_raw
+    from app.printer_service import status_from_raw
     app = create_app()
     raw = usb.decode_status(bytes.fromhex('802042343830000000003e0a0000230000000000000000000081000000000000'))
     with app.app_context():
-        assert _status_from_raw(raw, 'QL-800')['matchingSizes'] == ['62red']
-        assert _status_from_raw(raw, 'QL-800')['mediaColor'] == 'black-red'
+        assert status_from_raw(raw, 'QL-800')['matchingSizes'] == ['62red']
+        assert status_from_raw(raw, 'QL-800')['mediaColor'] == 'black-red'

@@ -68,9 +68,9 @@ def test_csv_values_are_not_evaluated_as_legacy_macros(client, monkeypatch):
     monkeypatch.setenv('BULK_SECRET', 'DO-NOT-RENDER')
     label = draft(client, {'kind': 'qr', 'code': 'example', 'caption': '{{Name}}'})
     merged = merge(label, {'Name': '{{env:BULK_SECRET}}'})
-    from app.studio import _render
+    from app.rendering import render
     with client.application.app_context():
-        renderer = _render(merged, None)
+        renderer = render(merged, None)
         renderer.generate()
         assert renderer.text[0]['text'] == '{{env:BULK_SECRET}}'
 

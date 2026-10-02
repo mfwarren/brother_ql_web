@@ -26,8 +26,8 @@ def index():
 def _process_webhook_queue(printer: PrinterQueue):
     if printer.device_specifier in ('simulation', '?'):
         return printer.process_queue()
-    from app.studio import _printer_lock
-    with _printer_lock() as acquired:
+    from app.printer_service import printer_lock
+    with printer_lock() as acquired:
         return printer.process_queue() if acquired else 'Printer busy'
 
 
