@@ -167,7 +167,7 @@ impl Font {
         baseline: f64,
         ink: Rgb<u8>,
     ) -> Result<()> {
-        let mut pen = x;
+        let mut pen = (x * 64.).round() / 64.;
         let mut previous = 0;
         for ch in text.chars() {
             let index = self.face.get_char_index(ch as usize).unwrap_or(0);
@@ -184,7 +184,7 @@ impl Font {
             glyph.render_glyph(RenderMode::Normal)?;
             let bitmap = glyph.bitmap();
             let ox = pen.round() as i64 + glyph.bitmap_left() as i64;
-            let oy = baseline.round() as i64 - glyph.bitmap_top() as i64;
+            let oy = ((baseline + 0.5).ceil() - 1.) as i64 - glyph.bitmap_top() as i64;
             let pitch = bitmap.pitch();
             for row in 0..bitmap.rows() {
                 for col in 0..bitmap.width() {
@@ -607,12 +607,22 @@ fn compose(
             (image.height() as f64 * scale) as i64,
         );
         let _ = canvas(w, h)?;
-        *image = imageops::resize(
-            image,
-            w.max(1) as u32,
-            h.max(1) as u32,
-            imageops::FilterType::Lanczos3,
-        );
+        let monochrome = string(&draft["content"], "kind") == "qr"
+            && string(draft, "color") != "red"
+            || string(&draft["content"], "kind") == "image"
+                && (string(&draft["content"], "mode") == "bw"
+                    || string(&draft["content"], "mode") == "red"
+                        && string(&draft["content"]["image"], "mime") == "application/pdf");
+        *image = if monochrome {
+            imageops::resize(
+                image,
+                w.max(1) as u32,
+                h.max(1) as u32,
+                imageops::FilterType::Nearest,
+            )
+        } else {
+            resize_lanczos(image, w.max(1) as u32, h.max(1) as u32)
+        };
     }
     let (iw, ih) = content
         .as_ref()
@@ -636,28 +646,28 @@ fn compose(
     let need_distance = string(&draft["content"], "kind") != "text";
     let (tx, ty, ix, iy) = if !g.rotated {
         let ty = if !g.continuous {
-            (height - ih - layout.height).div_euclid(2) + (top - bottom).div_euclid(2)
+            ((height - ih - layout.height).div_euclid(2) + (top - bottom).div_euclid(2)) as f64
         } else if need_distance {
-            (top as f64 * 1.25) as i64
+            top as f64 * 1.25
         } else {
-            top
+            top as f64
         };
         (
             (left + (width - left - right - layout.width).div_euclid(2)).max(0) as f64,
-            (ty + ih) as f64,
+            ty + ih as f64,
             left + (width - left - right - iw).div_euclid(2),
             top,
         )
     } else {
         let tx = if !g.continuous {
-            (width - iw - layout.width).div_euclid(2).max(0)
+            (width - iw - layout.width).div_euclid(2).max(0) as f64
         } else if need_distance {
-            (left as f64 * 1.25) as i64
+            left as f64 * 1.25
         } else {
-            left
+            left as f64
         };
         (
-            (tx + iw) as f64,
+            tx + iw as f64,
             ((height - layout.height).div_euclid(2) + (top - bottom).div_euclid(2)) as f64,
             left,
             top + (height - top - bottom - ih).div_euclid(2),
@@ -672,6 +682,84 @@ fn compose(
     }
     Ok(output)
 }
+// Separable Lanczos uses fixed-point coefficients and clips between passes, preserving
+// the 8-bit Pillow raster behavior used by existing saved image labels.
+fn resize_lanczos(source: &RgbImage, width: u32, height: u32) -> RgbImage {
+    const PRECISION: i64 = 1 << 22;
+    fn weights(input: u32, output: u32) -> Vec<(u32, Vec<i64>)> {
+        let scale = input as f64 / output as f64;
+        let filter_scale = scale.max(1.);
+        (0..output)
+            .map(|position| {
+                let center = (position as f64 + 0.5) * scale;
+                let first = ((center - 3. * filter_scale + 0.5) as i64).max(0) as u32;
+                let end = ((center + 3. * filter_scale + 0.5) as u32).min(input);
+                let mut coefficients: Vec<f64> = (first..end)
+                    .map(|x| {
+                        let x = (x as f64 - center + 0.5) / filter_scale;
+                        if x == 0. {
+                            1.
+                        } else if x.abs() >= 3. {
+                            0.
+                        } else {
+                            let a = x * std::f64::consts::PI;
+                            (a.sin() / a) * ((a / 3.).sin() / (a / 3.))
+                        }
+                    })
+                    .collect();
+                let sum: f64 = coefficients.iter().sum();
+                for coefficient in &mut coefficients {
+                    *coefficient /= sum;
+                }
+                (
+                    first,
+                    coefficients
+                        .into_iter()
+                        .map(|c| (c * PRECISION as f64).round() as i64)
+                        .collect(),
+                )
+            })
+            .collect()
+    }
+    let horizontal = if width == source.width() {
+        source.clone()
+    } else {
+        let weights = weights(source.width(), width);
+        let mut output = RgbImage::new(width, source.height());
+        for (x, y, pixel) in output.enumerate_pixels_mut() {
+            let (first, coefficients) = &weights[x as usize];
+            for channel in 0..3 {
+                let sum = PRECISION / 2
+                    + coefficients
+                        .iter()
+                        .enumerate()
+                        .map(|(i, c)| source.get_pixel(first + i as u32, y)[channel] as i64 * c)
+                        .sum::<i64>();
+                pixel[channel] = (sum >> 22).clamp(0, 255) as u8;
+            }
+        }
+        output
+    };
+    if height == source.height() {
+        return horizontal;
+    }
+    let weights = weights(source.height(), height);
+    let mut output = RgbImage::new(width, height);
+    for (x, y, pixel) in output.enumerate_pixels_mut() {
+        let (first, coefficients) = &weights[y as usize];
+        for channel in 0..3 {
+            let sum = PRECISION / 2
+                + coefficients
+                    .iter()
+                    .enumerate()
+                    .map(|(i, c)| horizontal.get_pixel(x, first + i as u32)[channel] as i64 * c)
+                    .sum::<i64>();
+            pixel[channel] = (sum >> 22).clamp(0, 255) as u8;
+        }
+    }
+    output
+}
+
 fn qr(draft: &Value) -> Result<RgbImage> {
     let code = qrcode::QrCode::with_error_correction_level(
         string(&draft["content"], "code").trim().as_bytes(),
