@@ -15,6 +15,7 @@ import argparse
 import base64
 import io
 import json
+import re
 import struct
 import sys
 import urllib.error
@@ -107,6 +108,16 @@ def decode(data, expected, require=False):
 
 def check_api(client, require_decode=False):
     client.assert_simulation()
+    page, headers = client.request('/')
+    assert headers['content-type'].startswith('text/html')
+    assets = re.findall(r'(?:src|href)="(/assets/[^" ]+)"', page.decode())
+    assert assets, 'Root editor must load assets from /assets/'
+    for asset in assets:
+        client.request(asset)
+    for old_path in ['/studio', '/studio/', '/labeldesigner/']:
+        with urllib.request.urlopen(client.url + old_path, timeout=10) as response:
+            assert response.geturl() == client.url + '/', 'Old editor links must redirect to root'
+    print('PASS root editor, built assets, and legacy URL redirects')
     config = client.json('/studio/api/config')
     font = config['defaultFont']
     font_ids = {f['id'] for f in config['fonts']}

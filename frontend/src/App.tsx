@@ -1,6 +1,7 @@
 import {
     AlertTriangle,
     Check,
+    ChevronRight,
     CircleHelp,
     FolderOpen,
     LayoutGrid,
@@ -391,11 +392,7 @@ export default function App() {
             className={`shell page-${page}${mismatchedPaper ? " paper-mismatch" : ""}`}
         >
             <aside className="sidebar">
-                <a
-                    className="brand"
-                    href="/studio/"
-                    aria-label="Label Studio home"
-                >
+                <a className="brand" href="/" aria-label="Label Studio home">
                     <span className="brand-mark">
                         <Tag size={22} strokeWidth={2.3} />
                     </span>
@@ -516,16 +513,6 @@ export default function App() {
                         {page === "editor" && (
                             <>
                                 <button
-                                    className="button subtle"
-                                    disabled={bulkBusy}
-                                    aria-pressed={bulkEnabled}
-                                    onClick={() => {
-                                        setBulkEnabled(!bulkEnabled);
-                                    }}
-                                >
-                                    Bulk
-                                </button>
-                                <button
                                     className="button subtle new-action"
                                     onClick={newLabel}
                                 >
@@ -589,22 +576,59 @@ export default function App() {
                         </div>
                     ) : (
                         <>
-                            {page === "editor" && (
-                                <>
+                            <div hidden={page !== "editor"}>
+                                <div className="editor-grid">
+                                    <div className="content-column">
+                                        <div inert={bulkBusy}>
+                                            <ContentPanel
+                                                draft={draft}
+                                                config={config}
+                                                content={content}
+                                                update={update}
+                                                changeKind={changeKind}
+                                                bulkEnabled={bulkEnabled}
+                                                uploadInput={uploadInput}
+                                                upload={upload}
+                                            />
+                                        </div>
+                                        <section className="bulk-accordion panel">
+                                            <h2>
+                                                <button
+                                                    type="button"
+                                                    className="bulk-toggle"
+                                                    disabled={bulkBusy}
+                                                    aria-expanded={bulkEnabled}
+                                                    aria-controls="bulk-data"
+                                                    onClick={() =>
+                                                        setBulkEnabled(
+                                                            !bulkEnabled,
+                                                        )
+                                                    }
+                                                >
+                                                    <LayoutGrid size={16} />{" "}
+                                                    Bulk labels{" "}
+                                                    <ChevronRight size={16} />
+                                                </button>
+                                            </h2>
+                                            <div
+                                                id="bulk-data"
+                                                hidden={!bulkEnabled}
+                                            >
+                                                <BulkDataPanel
+                                                    template={draft}
+                                                    config={config}
+                                                    cut={cut}
+                                                    onTemplateChange={setDraft}
+                                                    onPreview={setBulkPreview}
+                                                    onBusy={setBulkBusy}
+                                                />
+                                            </div>
+                                        </section>
+                                    </div>
                                     <div
-                                        className="editor-grid"
+                                        className="settings-column"
                                         inert={bulkBusy}
                                     >
-                                        <ContentPanel
-                                            draft={draft}
-                                            config={config}
-                                            content={content}
-                                            update={update}
-                                            changeKind={changeKind}
-                                            bulkEnabled={bulkEnabled}
-                                            uploadInput={uploadInput}
-                                            upload={upload}
-                                        />
                                         <PaperSettings
                                             draft={draft}
                                             config={config}
@@ -618,123 +642,110 @@ export default function App() {
                                             cut={cut}
                                             setCut={setCut}
                                         />
-                                        <div className="preview-column">
-                                            <PreviewPanel
-                                                name={name}
-                                                draft={draft}
-                                                config={config}
-                                                bulkEnabled={bulkEnabled}
-                                                bulkPreview={bulkPreview}
-                                                preview={preview}
-                                                displayedImage={displayedImage}
-                                                displayedUrl={displayedUrl}
-                                                sizeName={sizeName}
-                                                showMargins={showMargins}
-                                            />
-                                            <section
-                                                className="print-panel panel"
-                                                hidden={bulkEnabled}
-                                            >
-                                                {mismatchedPaper && (
-                                                    <div
-                                                        className="paper-warning"
-                                                        role="alert"
-                                                    >
-                                                        <AlertTriangle
-                                                            size={18}
-                                                            aria-hidden="true"
-                                                        />
-                                                        <div>
-                                                            <strong>
-                                                                Paper mismatch
-                                                            </strong>
-                                                            <span>
-                                                                Needs {sizeName}
-                                                                . Loaded:{" "}
-                                                                {status?.media}.
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                <div className="print-options">
-                                                    <label className="field">
-                                                        Copies
-                                                        <input
-                                                            aria-label="Copies"
-                                                            type="number"
-                                                            min={1}
-                                                            max={100}
-                                                            value={copies}
-                                                            onChange={(event) =>
-                                                                setCopies(
-                                                                    Number(
-                                                                        event
-                                                                            .target
-                                                                            .value,
-                                                                    ),
-                                                                )
-                                                            }
-                                                        />
-                                                    </label>
-                                                </div>
-                                                <button
-                                                    className="button primary print-button"
-                                                    aria-keyshortcuts="Meta+Enter Control+Enter"
-                                                    title="Print (⌘/Ctrl + Enter)"
-                                                    disabled={
-                                                        !canPrint ||
-                                                        mismatchedPaper ||
-                                                        !previewCurrent ||
-                                                        busy ||
-                                                        copies < 1 ||
-                                                        copies > 100 ||
-                                                        !Number.isInteger(
-                                                            copies,
-                                                        )
-                                                    }
-                                                    onClick={() =>
-                                                        void print(
-                                                            draft,
-                                                            copies,
-                                                        )
-                                                    }
-                                                >
-                                                    {busy ? (
-                                                        <LoaderCircle
-                                                            className="spin"
-                                                            size={18}
-                                                        />
-                                                    ) : (
-                                                        <Printer size={18} />
-                                                    )}
-                                                    {simulated
-                                                        ? "Test print"
-                                                        : `Print ${copies === 1 ? "label" : `${copies} labels`}`}
-                                                </button>
-                                                <p className="print-note">
-                                                    {simulated
-                                                        ? "Simulator · no paper used"
-                                                        : !canPrint
-                                                          ? status?.message ||
-                                                            "Checking the printer…"
-                                                          : mismatchedPaper
-                                                            ? "Change the roll or label settings"
-                                                            : "Ready"}
-                                                </p>
-                                            </section>
-                                        </div>
                                     </div>
-                                </>
-                            )}
-                            <div hidden={!bulkEnabled || page !== "editor"}>
-                                <BulkDataPanel
-                                    template={draft}
-                                    config={config}
-                                    cut={cut}
-                                    onTemplateChange={setDraft}
-                                    onPreview={setBulkPreview}
-                                    onBusy={setBulkBusy}
-                                />
+                                    <div
+                                        className="preview-column"
+                                        inert={bulkBusy}
+                                    >
+                                        <PreviewPanel
+                                            name={name}
+                                            draft={draft}
+                                            config={config}
+                                            bulkEnabled={bulkEnabled}
+                                            bulkPreview={bulkPreview}
+                                            preview={preview}
+                                            displayedImage={displayedImage}
+                                            displayedUrl={displayedUrl}
+                                            sizeName={sizeName}
+                                            showMargins={showMargins}
+                                        />
+                                        <section
+                                            className="print-panel panel"
+                                            hidden={bulkEnabled}
+                                        >
+                                            {mismatchedPaper && (
+                                                <div
+                                                    className="paper-warning"
+                                                    role="alert"
+                                                >
+                                                    <AlertTriangle
+                                                        size={18}
+                                                        aria-hidden="true"
+                                                    />
+                                                    <div>
+                                                        <strong>
+                                                            Paper mismatch
+                                                        </strong>
+                                                        <span>
+                                                            Needs {sizeName}.
+                                                            Loaded:{" "}
+                                                            {status?.media}.
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div className="print-options">
+                                                <label className="field">
+                                                    Copies
+                                                    <input
+                                                        aria-label="Copies"
+                                                        type="number"
+                                                        min={1}
+                                                        max={100}
+                                                        value={copies}
+                                                        onChange={(event) =>
+                                                            setCopies(
+                                                                Number(
+                                                                    event.target
+                                                                        .value,
+                                                                ),
+                                                            )
+                                                        }
+                                                    />
+                                                </label>
+                                            </div>
+                                            <button
+                                                className="button primary print-button"
+                                                aria-keyshortcuts="Meta+Enter Control+Enter"
+                                                title="Print (⌘/Ctrl + Enter)"
+                                                disabled={
+                                                    !canPrint ||
+                                                    mismatchedPaper ||
+                                                    !previewCurrent ||
+                                                    busy ||
+                                                    copies < 1 ||
+                                                    copies > 100 ||
+                                                    !Number.isInteger(copies)
+                                                }
+                                                onClick={() =>
+                                                    void print(draft, copies)
+                                                }
+                                            >
+                                                {busy ? (
+                                                    <LoaderCircle
+                                                        className="spin"
+                                                        size={18}
+                                                    />
+                                                ) : (
+                                                    <Printer size={18} />
+                                                )}
+                                                {simulated
+                                                    ? "Test print"
+                                                    : `Print ${copies === 1 ? "label" : `${copies} labels`}`}
+                                            </button>
+                                            <p className="print-note">
+                                                {simulated
+                                                    ? "Simulator · no paper used"
+                                                    : !canPrint
+                                                      ? status?.message ||
+                                                        "Checking the printer…"
+                                                      : mismatchedPaper
+                                                        ? "Change the roll or label settings"
+                                                        : "Ready"}
+                                            </p>
+                                        </section>
+                                    </div>
+                                </div>
                             </div>
                             {page === "library" && (
                                 <LibraryView

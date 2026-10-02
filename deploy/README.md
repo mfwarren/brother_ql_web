@@ -21,7 +21,7 @@ sudo systemctl enable --now label-studio
 sudo systemctl status label-studio
 ```
 
-Open `http://<pi-hostname>.local/studio/`. The service grants permission to bind port 80 without running as root.
+Open `http://<pi-hostname>.local/`. The service grants permission to bind port 80 without running as root.
 
 ## Upgrades and rollback
 

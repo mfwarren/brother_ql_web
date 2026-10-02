@@ -32,7 +32,7 @@ async fn main() -> anyhow::Result<()> {
         .parse::<u16>()?;
     let app = api::router(config)?;
     let listener = tokio::net::TcpListener::bind((host.as_str(), port)).await?;
-    eprintln!("Label Studio listening on http://{host}:{port}/studio/");
+    eprintln!("Label Studio listening on http://{host}:{port}/");
     axum::serve(listener, app)
         .with_graceful_shutdown(async {
             let _ = tokio::signal::ctrl_c().await;

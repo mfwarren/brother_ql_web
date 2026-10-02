@@ -1,6 +1,6 @@
 # Studio HTTP API
 
-The Rust server serves the React app at `/studio/` and its API at `/studio/api`. `/` and `/labeldesigner/` redirect to Studio. Printer selection and simulation mode are server configuration, not client overrides.
+The Rust server serves the React editor at `/` and its API at `/studio/api`. Older `/studio`, `/studio/`, and `/labeldesigner/` links redirect to `/`. Printer selection and simulation mode are server configuration, not client overrides.
 
 ## Endpoints
 

@@ -41,7 +41,7 @@ jobs:
             if curl --fail --silent http://127.0.0.1:8016/studio/api/config > /dev/null; then break; fi
             sleep 1
           done
-          curl --fail --silent http://127.0.0.1:8016/studio/ > /dev/null
+          curl --fail --silent http://127.0.0.1:8016/ > /dev/null
           python tools/check_rust_api.py --url http://127.0.0.1:8016 --require-decode
           python tools/check_webhook.py --url http://127.0.0.1:8016 --password ci-test --data-dir "$test_data"
           python tools/check_http_admission.py --url http://127.0.0.1:8016

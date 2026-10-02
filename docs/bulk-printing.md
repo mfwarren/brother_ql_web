@@ -1,6 +1,6 @@
 # Bulk labels from CSV
 
-Design a text, QR, barcode, or image label in the editor, then turn on **Bulk**. The designer stays in place; the CSV and batch review panel appears below it.
+Design a text, QR, barcode, or image label in the editor, then expand **Bulk labels** below the content editor. The designer stays in place; the CSV and batch review panel appears below it.
 Keep using the same Text, QR, Barcode, and Image tabs, formatting toolbar, and paper settings. There is no separate template editor. Checking the batch selects the first valid row in the main preview. Choose **Preview N** on any review card to show that row there. Changing the design invalidates the reviewed batch; check it again before printing.
 
 Write a CSV column name inside double braces, such as `{{Product}}`.
@@ -35,7 +35,7 @@ all text fits the selected paper or that a physical barcode will scan.
 
 **Download template** saves a reusable JSON file, including paper and formatting.
 **Load template** restores it. CSV rows are not included in that file. Replacing
-the CSV or editing the template clears the previous review. CSV data stays in memory while you switch tabs or toggle Bulk. Download your template before reloading or closing the page.
+the CSV or editing the template clears the previous review. CSV data stays in memory while you switch pages or collapse Bulk labels. Download your template before reloading or closing the page.
 
 Every selected label is rendered and converted for the printer before the first
 label is sent. A batch uses one paper size and resolution and follows the designer's Cut setting.

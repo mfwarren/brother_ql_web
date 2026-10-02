@@ -31,7 +31,7 @@ PRINTER_PRINTER=simulation FONT_FOLDER=.local-fonts \
   server/target/release/label-studio-server
 ```
 
-`FONT_FOLDER` is optional; the server also discovers installed system fonts. Open `http://127.0.0.1:8013/studio/`. Simulated prints produce files without using a printer. Nine sample labels appear in a new library.
+`FONT_FOLDER` is optional; the server also discovers installed system fonts. Open `http://127.0.0.1:8013/`. Simulated prints produce files without using a printer. Nine sample labels appear in a new library.
 
 ## Connect a printer
 
@@ -43,7 +43,7 @@ PRINTER_PRINTER=file:///dev/usb/lp0 PRINTER_MODEL=QL-800 \
   server/target/release/label-studio-server
 ```
 
-Open `http://<printer-host>:8013/studio/`. Check the detected roll on the Printer page before printing. A `tcp://host:9100` connection is also supported; network printers cannot supply the same USB status checks.
+Open `http://<printer-host>:8013/`. Check the detected roll on the Printer page before printing. A `tcp://host:9100` connection is also supported; network printers cannot supply the same USB status checks.
 
 For automatic startup on port 80, use the [service guide](deploy/README.md).
 
