@@ -735,9 +735,9 @@ export default function App() {
                                                 ) : (
                                                     <Printer size={18} />
                                                 )}
-                                                {simulated
-                                                    ? "Test print"
-                                                    : `Print ${copies === 1 ? "label" : `${copies} labels`}`}
+                                                {copies === 1
+                                                    ? "Print single label"
+                                                    : `Print ${copies} labels`}
                                             </button>
                                             <p className="print-note">
                                                 {bulkPreview &&
