@@ -1,0 +1,508 @@
+[
+  {
+    "identifier": "QL-500",
+    "min_max_length_dots": [
+      295,
+      11811
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 90,
+    "additional_offset_r": 0,
+    "mode_setting": false,
+    "cutting": false,
+    "expanded_mode": false,
+    "compression_support": false,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 48,
+    "model_code": 79,
+    "product_id": 8213
+  },
+  {
+    "identifier": "QL-550",
+    "min_max_length_dots": [
+      295,
+      11811
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 90,
+    "additional_offset_r": 0,
+    "mode_setting": false,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": false,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 48,
+    "model_code": 79,
+    "product_id": 8214
+  },
+  {
+    "identifier": "QL-560",
+    "min_max_length_dots": [
+      295,
+      11811
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 90,
+    "additional_offset_r": 0,
+    "mode_setting": false,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": false,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 52,
+    "model_code": 49,
+    "product_id": 8231
+  },
+  {
+    "identifier": "QL-570",
+    "min_max_length_dots": [
+      150,
+      11811
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 90,
+    "additional_offset_r": 0,
+    "mode_setting": false,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": false,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 52,
+    "model_code": 50,
+    "product_id": 8232
+  },
+  {
+    "identifier": "QL-580N",
+    "min_max_length_dots": [
+      150,
+      11811
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 90,
+    "additional_offset_r": 0,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": true,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 52,
+    "model_code": 51,
+    "product_id": 8233
+  },
+  {
+    "identifier": "QL-600",
+    "min_max_length_dots": [
+      150,
+      11811
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 90,
+    "additional_offset_r": 0,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": true,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 52,
+    "model_code": 71,
+    "product_id": 8384
+  },
+  {
+    "identifier": "QL-650TD",
+    "min_max_length_dots": [
+      295,
+      11811
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 90,
+    "additional_offset_r": 0,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": true,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 48,
+    "model_code": 81,
+    "product_id": 8219
+  },
+  {
+    "identifier": "QL-700",
+    "min_max_length_dots": [
+      150,
+      11811
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 90,
+    "additional_offset_r": 0,
+    "mode_setting": false,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": false,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 52,
+    "model_code": 53,
+    "product_id": 8258
+  },
+  {
+    "identifier": "QL-710W",
+    "min_max_length_dots": [
+      150,
+      11811
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 90,
+    "additional_offset_r": 0,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": true,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 52,
+    "model_code": 54,
+    "product_id": 8259
+  },
+  {
+    "identifier": "QL-720NW",
+    "min_max_length_dots": [
+      150,
+      11811
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 90,
+    "additional_offset_r": 0,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": true,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 52,
+    "model_code": 55,
+    "product_id": 8260
+  },
+  {
+    "identifier": "QL-800",
+    "min_max_length_dots": [
+      150,
+      11811
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 90,
+    "additional_offset_r": 0,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": false,
+    "two_color": true,
+    "num_invalidate_bytes": 400,
+    "series_code": 52,
+    "model_code": 56,
+    "product_id": 8347
+  },
+  {
+    "identifier": "QL-810W",
+    "min_max_length_dots": [
+      150,
+      11811
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 90,
+    "additional_offset_r": 0,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": true,
+    "two_color": true,
+    "num_invalidate_bytes": 400,
+    "series_code": 52,
+    "model_code": 57,
+    "product_id": 8348
+  },
+  {
+    "identifier": "QL-820NWB",
+    "min_max_length_dots": [
+      150,
+      11811
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 90,
+    "additional_offset_r": 0,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": true,
+    "two_color": true,
+    "num_invalidate_bytes": 400,
+    "series_code": 52,
+    "model_code": 65,
+    "product_id": 8349
+  },
+  {
+    "identifier": "QL-1050",
+    "min_max_length_dots": [
+      295,
+      35433
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 162,
+    "additional_offset_r": 44,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": true,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 48,
+    "model_code": 80,
+    "product_id": 8224
+  },
+  {
+    "identifier": "QL-1060N",
+    "min_max_length_dots": [
+      295,
+      35433
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 162,
+    "additional_offset_r": 44,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": true,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 52,
+    "model_code": 52,
+    "product_id": 8234
+  },
+  {
+    "identifier": "QL-1100",
+    "min_max_length_dots": [
+      301,
+      35434
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 162,
+    "additional_offset_r": 44,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": true,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 52,
+    "model_code": 67,
+    "product_id": 8359
+  },
+  {
+    "identifier": "QL-1110NWB",
+    "min_max_length_dots": [
+      301,
+      35434
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 162,
+    "additional_offset_r": 44,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": true,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 52,
+    "model_code": 68,
+    "product_id": 8360
+  },
+  {
+    "identifier": "QL-1115NWB",
+    "min_max_length_dots": [
+      301,
+      35434
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 162,
+    "additional_offset_r": 44,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": true,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 52,
+    "model_code": 69,
+    "product_id": 8363
+  },
+  {
+    "identifier": "PT-E550W",
+    "min_max_length_dots": [
+      31,
+      14172
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 16,
+    "additional_offset_r": 0,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": true,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 48,
+    "model_code": 104,
+    "product_id": 8288
+  },
+  {
+    "identifier": "PT-P700",
+    "min_max_length_dots": [
+      31,
+      7086
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 16,
+    "additional_offset_r": 0,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": true,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 48,
+    "model_code": 103,
+    "product_id": 8289
+  },
+  {
+    "identifier": "PT-P750W",
+    "min_max_length_dots": [
+      31,
+      7086
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 16,
+    "additional_offset_r": 0,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": true,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 48,
+    "model_code": 104,
+    "product_id": 8290
+  },
+  {
+    "identifier": "PT-P900W",
+    "min_max_length_dots": [
+      57,
+      28346
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 70,
+    "additional_offset_r": 0,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": true,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 48,
+    "model_code": 105,
+    "product_id": 8325
+  },
+  {
+    "identifier": "PT-P950NW",
+    "min_max_length_dots": [
+      57,
+      28346
+    ],
+    "min_max_feed": [
+      35,
+      1500
+    ],
+    "number_bytes_per_row": 70,
+    "additional_offset_r": 0,
+    "mode_setting": true,
+    "cutting": true,
+    "expanded_mode": true,
+    "compression_support": true,
+    "two_color": false,
+    "num_invalidate_bytes": 200,
+    "series_code": 48,
+    "model_code": 112,
+    "product_id": 8326
+  }
+]

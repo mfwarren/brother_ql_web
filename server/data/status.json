@@ -1,0 +1,34 @@
+{
+  "RESP_ERROR_INFORMATION_1_DEF": {
+    "0": "No media when printing",
+    "1": "End of media (die-cut size only)",
+    "2": "Tape cutter jam",
+    "3": "Weak batteries",
+    "4": "Main unit in use (QL-560/650TD/1050)",
+    "5": "Printer turned off",
+    "6": "High-voltage adapter (not used)",
+    "7": "Fan doesn't work (QL-1050/1060N)"
+  },
+  "RESP_ERROR_INFORMATION_2_DEF": {
+    "0": "Replace media error",
+    "1": "Expansion buffer full error",
+    "2": "Transmission / Communication error",
+    "3": "Communication buffer full error (not used)",
+    "4": "Cover opened while printing (Except QL-500)",
+    "5": "Cancel key (not used) or Overheating error (PT-E550W/P750W/P710BT)",
+    "6": "Media cannot be fed (also when the media end is detected)",
+    "7": "System error"
+  },
+  "RESP_MEDIA_TYPES": {
+    "0": "No media",
+    "1": "Laminated tape",
+    "3": "Non-laminated type",
+    "17": "Heat-Shrink Tube (HS 2:1)",
+    "23": "Heat-Shrink Tube (HS 3:1)",
+    "10": "Continuous length tape",
+    "11": "Die-cut labels",
+    "74": "Continuous length tape",
+    "75": "Die-cut labels",
+    "255": "Incompatible tape"
+  }
+}

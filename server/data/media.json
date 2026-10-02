@@ -1,0 +1,746 @@
+[
+  {
+    "identifier": "12",
+    "tape_size": [
+      12,
+      0
+    ],
+    "form_factor": 2,
+    "dots_total": [
+      142,
+      0
+    ],
+    "dots_printable": [
+      106,
+      0
+    ],
+    "offset_r": 29,
+    "feed_margin": 35,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "12mm endless"
+  },
+  {
+    "identifier": "12+17",
+    "tape_size": [
+      12,
+      0
+    ],
+    "form_factor": 2,
+    "dots_total": [
+      342,
+      0
+    ],
+    "dots_printable": [
+      306,
+      0
+    ],
+    "offset_r": 29,
+    "feed_margin": 35,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "12mm endless"
+  },
+  {
+    "identifier": "18",
+    "tape_size": [
+      18,
+      0
+    ],
+    "form_factor": 2,
+    "dots_total": [
+      256,
+      0
+    ],
+    "dots_printable": [
+      234,
+      0
+    ],
+    "offset_r": 171,
+    "feed_margin": 14,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "18mm endless"
+  },
+  {
+    "identifier": "29",
+    "tape_size": [
+      29,
+      0
+    ],
+    "form_factor": 2,
+    "dots_total": [
+      342,
+      0
+    ],
+    "dots_printable": [
+      306,
+      0
+    ],
+    "offset_r": 6,
+    "feed_margin": 35,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "29mm endless"
+  },
+  {
+    "identifier": "38",
+    "tape_size": [
+      38,
+      0
+    ],
+    "form_factor": 2,
+    "dots_total": [
+      449,
+      0
+    ],
+    "dots_printable": [
+      413,
+      0
+    ],
+    "offset_r": 12,
+    "feed_margin": 35,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "38mm endless"
+  },
+  {
+    "identifier": "50",
+    "tape_size": [
+      50,
+      0
+    ],
+    "form_factor": 2,
+    "dots_total": [
+      590,
+      0
+    ],
+    "dots_printable": [
+      554,
+      0
+    ],
+    "offset_r": 12,
+    "feed_margin": 35,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "50mm endless"
+  },
+  {
+    "identifier": "54",
+    "tape_size": [
+      54,
+      0
+    ],
+    "form_factor": 2,
+    "dots_total": [
+      636,
+      0
+    ],
+    "dots_printable": [
+      590,
+      0
+    ],
+    "offset_r": 0,
+    "feed_margin": 35,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "54mm endless"
+  },
+  {
+    "identifier": "62",
+    "tape_size": [
+      62,
+      0
+    ],
+    "form_factor": 2,
+    "dots_total": [
+      732,
+      0
+    ],
+    "dots_printable": [
+      696,
+      0
+    ],
+    "offset_r": 12,
+    "feed_margin": 35,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "62mm endless"
+  },
+  {
+    "identifier": "62red",
+    "tape_size": [
+      62,
+      0
+    ],
+    "form_factor": 2,
+    "dots_total": [
+      732,
+      0
+    ],
+    "dots_printable": [
+      696,
+      0
+    ],
+    "offset_r": 12,
+    "feed_margin": 35,
+    "restricted_to_models": [],
+    "color": 1,
+    "name": "62mm endless (black/red/white)"
+  },
+  {
+    "identifier": "102",
+    "tape_size": [
+      102,
+      0
+    ],
+    "form_factor": 2,
+    "dots_total": [
+      1200,
+      0
+    ],
+    "dots_printable": [
+      1164,
+      0
+    ],
+    "offset_r": 12,
+    "feed_margin": 35,
+    "restricted_to_models": [
+      "QL-1050",
+      "QL-1060N",
+      "QL-1100",
+      "QL-1110NWB",
+      "QL-1115NWB"
+    ],
+    "color": 0,
+    "name": "102mm endless"
+  },
+  {
+    "identifier": "103",
+    "tape_size": [
+      104,
+      0
+    ],
+    "form_factor": 2,
+    "dots_total": [
+      1224,
+      0
+    ],
+    "dots_printable": [
+      1200,
+      0
+    ],
+    "offset_r": 12,
+    "feed_margin": 35,
+    "restricted_to_models": [
+      "QL-1100",
+      "QL-1110NWB"
+    ],
+    "color": 0,
+    "name": "104mm endless"
+  },
+  {
+    "identifier": "104",
+    "tape_size": [
+      104,
+      0
+    ],
+    "form_factor": 2,
+    "dots_total": [
+      1227,
+      0
+    ],
+    "dots_printable": [
+      1200,
+      0
+    ],
+    "offset_r": -8,
+    "feed_margin": 35,
+    "restricted_to_models": [
+      "QL-1050",
+      "QL-1060N",
+      "QL-1100",
+      "QL-1110NWB",
+      "QL-1115NWB"
+    ],
+    "color": 0,
+    "name": "104mm endless"
+  },
+  {
+    "identifier": "17x54",
+    "tape_size": [
+      17,
+      54
+    ],
+    "form_factor": 1,
+    "dots_total": [
+      201,
+      636
+    ],
+    "dots_printable": [
+      165,
+      566
+    ],
+    "offset_r": 0,
+    "feed_margin": 0,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "17mm x 54mm die-cut"
+  },
+  {
+    "identifier": "17x87",
+    "tape_size": [
+      17,
+      87
+    ],
+    "form_factor": 1,
+    "dots_total": [
+      201,
+      1026
+    ],
+    "dots_printable": [
+      165,
+      956
+    ],
+    "offset_r": 0,
+    "feed_margin": 0,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "17mm x 87mm die-cut"
+  },
+  {
+    "identifier": "23x23",
+    "tape_size": [
+      23,
+      23
+    ],
+    "form_factor": 1,
+    "dots_total": [
+      272,
+      272
+    ],
+    "dots_printable": [
+      202,
+      202
+    ],
+    "offset_r": 42,
+    "feed_margin": 0,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "23mm x 23mm die-cut"
+  },
+  {
+    "identifier": "29x42",
+    "tape_size": [
+      29,
+      42
+    ],
+    "form_factor": 1,
+    "dots_total": [
+      342,
+      495
+    ],
+    "dots_printable": [
+      306,
+      425
+    ],
+    "offset_r": 6,
+    "feed_margin": 0,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "29mm x 42mm die-cut"
+  },
+  {
+    "identifier": "29x90",
+    "tape_size": [
+      29,
+      90
+    ],
+    "form_factor": 1,
+    "dots_total": [
+      342,
+      1061
+    ],
+    "dots_printable": [
+      306,
+      991
+    ],
+    "offset_r": 6,
+    "feed_margin": 0,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "29mm x 90mm die-cut"
+  },
+  {
+    "identifier": "39x90",
+    "tape_size": [
+      38,
+      90
+    ],
+    "form_factor": 1,
+    "dots_total": [
+      449,
+      1061
+    ],
+    "dots_printable": [
+      413,
+      991
+    ],
+    "offset_r": 12,
+    "feed_margin": 0,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "38mm x 90mm die-cut"
+  },
+  {
+    "identifier": "39x48",
+    "tape_size": [
+      39,
+      48
+    ],
+    "form_factor": 1,
+    "dots_total": [
+      461,
+      565
+    ],
+    "dots_printable": [
+      425,
+      495
+    ],
+    "offset_r": 6,
+    "feed_margin": 0,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "39mm x 48mm die-cut"
+  },
+  {
+    "identifier": "52x29",
+    "tape_size": [
+      52,
+      29
+    ],
+    "form_factor": 1,
+    "dots_total": [
+      614,
+      341
+    ],
+    "dots_printable": [
+      578,
+      271
+    ],
+    "offset_r": 0,
+    "feed_margin": 0,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "52mm x 29mm die-cut"
+  },
+  {
+    "identifier": "54x29",
+    "tape_size": [
+      54,
+      29
+    ],
+    "form_factor": 1,
+    "dots_total": [
+      630,
+      341
+    ],
+    "dots_printable": [
+      598,
+      271
+    ],
+    "offset_r": 60,
+    "feed_margin": 0,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "54mm x 29mm die-cut"
+  },
+  {
+    "identifier": "60x86",
+    "tape_size": [
+      60,
+      87
+    ],
+    "form_factor": 1,
+    "dots_total": [
+      708,
+      1024
+    ],
+    "dots_printable": [
+      672,
+      954
+    ],
+    "offset_r": 18,
+    "feed_margin": 0,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "60mm x 87mm die-cut"
+  },
+  {
+    "identifier": "62x29",
+    "tape_size": [
+      62,
+      29
+    ],
+    "form_factor": 1,
+    "dots_total": [
+      732,
+      341
+    ],
+    "dots_printable": [
+      696,
+      271
+    ],
+    "offset_r": 12,
+    "feed_margin": 0,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "62mm x 29mm die-cut"
+  },
+  {
+    "identifier": "62x100",
+    "tape_size": [
+      62,
+      100
+    ],
+    "form_factor": 1,
+    "dots_total": [
+      732,
+      1179
+    ],
+    "dots_printable": [
+      696,
+      1109
+    ],
+    "offset_r": 12,
+    "feed_margin": 0,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "62mm x 100mm die-cut"
+  },
+  {
+    "identifier": "102x51",
+    "tape_size": [
+      102,
+      51
+    ],
+    "form_factor": 1,
+    "dots_total": [
+      1200,
+      596
+    ],
+    "dots_printable": [
+      1164,
+      526
+    ],
+    "offset_r": 12,
+    "feed_margin": 0,
+    "restricted_to_models": [
+      "QL-1050",
+      "QL-1060N",
+      "QL-1100",
+      "QL-1110NWB",
+      "QL-1115NWB"
+    ],
+    "color": 0,
+    "name": "102mm x 51mm die-cut"
+  },
+  {
+    "identifier": "102x152",
+    "tape_size": [
+      102,
+      153
+    ],
+    "form_factor": 1,
+    "dots_total": [
+      1200,
+      1804
+    ],
+    "dots_printable": [
+      1164,
+      1660
+    ],
+    "offset_r": 12,
+    "feed_margin": 0,
+    "restricted_to_models": [
+      "QL-1050",
+      "QL-1060N",
+      "QL-1100",
+      "QL-1110NWB",
+      "QL-1115NWB"
+    ],
+    "color": 0,
+    "name": "102mm x 153mm die-cut"
+  },
+  {
+    "identifier": "103x164",
+    "tape_size": [
+      104,
+      164
+    ],
+    "form_factor": 1,
+    "dots_total": [
+      1224,
+      1941
+    ],
+    "dots_printable": [
+      1200,
+      1822
+    ],
+    "offset_r": 12,
+    "feed_margin": 0,
+    "restricted_to_models": [
+      "QL-1100",
+      "QL-1110NWB"
+    ],
+    "color": 0,
+    "name": "104mm x 164mm die-cut"
+  },
+  {
+    "identifier": "d12",
+    "tape_size": [
+      12,
+      12
+    ],
+    "form_factor": 3,
+    "dots_total": [
+      142,
+      142
+    ],
+    "dots_printable": [
+      94,
+      94
+    ],
+    "offset_r": 113,
+    "feed_margin": 35,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "12mm round die-cut"
+  },
+  {
+    "identifier": "d24",
+    "tape_size": [
+      24,
+      24
+    ],
+    "form_factor": 3,
+    "dots_total": [
+      284,
+      284
+    ],
+    "dots_printable": [
+      236,
+      236
+    ],
+    "offset_r": 42,
+    "feed_margin": 0,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "24mm round die-cut"
+  },
+  {
+    "identifier": "d58",
+    "tape_size": [
+      58,
+      58
+    ],
+    "form_factor": 3,
+    "dots_total": [
+      688,
+      688
+    ],
+    "dots_printable": [
+      618,
+      618
+    ],
+    "offset_r": 51,
+    "feed_margin": 0,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "58mm round die-cut"
+  },
+  {
+    "identifier": "pt12",
+    "tape_size": [
+      12,
+      0
+    ],
+    "form_factor": 4,
+    "dots_total": [
+      128,
+      0
+    ],
+    "dots_printable": [
+      70,
+      0
+    ],
+    "offset_r": 29,
+    "feed_margin": 14,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "12mm endless"
+  },
+  {
+    "identifier": "pt18",
+    "tape_size": [
+      18,
+      0
+    ],
+    "form_factor": 4,
+    "dots_total": [
+      128,
+      0
+    ],
+    "dots_printable": [
+      112,
+      0
+    ],
+    "offset_r": 8,
+    "feed_margin": 14,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "18mm endless"
+  },
+  {
+    "identifier": "pt24",
+    "tape_size": [
+      24,
+      0
+    ],
+    "form_factor": 4,
+    "dots_total": [
+      128,
+      0
+    ],
+    "dots_printable": [
+      128,
+      0
+    ],
+    "offset_r": 0,
+    "feed_margin": 14,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "24mm endless"
+  },
+  {
+    "identifier": "pt36",
+    "tape_size": [
+      36,
+      0
+    ],
+    "form_factor": 4,
+    "dots_total": [
+      512,
+      0
+    ],
+    "dots_printable": [
+      454,
+      0
+    ],
+    "offset_r": 61,
+    "feed_margin": 14,
+    "restricted_to_models": [],
+    "color": 0,
+    "name": "36mm endless"
+  }
+]
