@@ -1012,3 +1012,26 @@ fn label_image(draft: &Value) -> Result<RgbImage> {
     }
     Ok(image)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn variable_font_axes_match_pillow_weight_rasters() {
+        let library = Library::init().unwrap();
+        for (weight, expected_ink) in [(100., 57120), (400., 250096), (700., 443296)] {
+            let face = library
+                .new_memory_face(
+                    include_bytes!("../tests/fixtures/rendering/variable.ttf").to_vec(),
+                    0,
+                )
+                .unwrap();
+            let font = Font::from_face(face, 80, &[weight]).unwrap();
+            let mut image = canvas(100, 100).unwrap();
+            font.draw(&mut image, "A", 0., 80., Rgb([0; 3])).unwrap();
+            let ink: u32 = image.pixels().map(|p| 255 - p[0] as u32).sum();
+            assert_eq!(ink, expected_ink, "weight {weight}");
+        }
+    }
+}
