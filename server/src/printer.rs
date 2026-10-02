@@ -509,7 +509,7 @@ pub fn rasterize(
                 };
                 let hue = hue as u8;
                 let saturation = saturation as u8;
-                let ri = (hue < 40 || hue > 210) && saturation > 100 && max > 80 && ink >= 76;
+                let ri = !(40..=210).contains(&hue) && saturation > 100 && max > 80 && ink >= 76;
                 (max < 80 && ink >= 76 && !ri, ri)
             } else if dither {
                 let value = (ink + (errors[x as usize + 1] + carry) / 16).clamp(0, 255);
@@ -703,145 +703,6 @@ pub fn print_images(
         .collect::<Result<Vec<_>>>()?;
     submit(config, &pages)
 }
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn raster_matches_python_driver() {
-        let cases: Value =
-            serde_json::from_str(include_str!("../tests/fixtures/cases.json")).unwrap();
-        for (i, c) in cases.as_array().unwrap().iter().enumerate() {
-            let base = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures");
-            let img = image::open(base.join(format!("{i}.png")))
-                .unwrap()
-                .into_rgb8();
-            let actual = rasterize(
-                c["model"].as_str().unwrap(),
-                c["size"].as_str().unwrap(),
-                &img,
-                false,
-                c["hi"].as_bool().unwrap(),
-                true,
-                c["dither"].as_bool().unwrap(),
-            )
-            .unwrap();
-            let expected = fs::read(base.join(format!("{i}.bin"))).unwrap();
-            assert_eq!(actual.len(), expected.len(), "case {i} length");
-            if let Some(pos) = actual.iter().zip(&expected).position(|(a, b)| a != b) {
-                panic!(
-                    "case {i} byte {pos}: actual {} expected {}",
-                    actual[pos], expected[pos]
-                );
-            }
-        }
-    }
-    fn packet(width: u8, length: u8, color: u8) -> Vec<u8> {
-        let mut p = vec![0; 32];
-        p[..6].copy_from_slice(&[0x80, 0x20, 0x42, 0x34, 0x38, 0x30]);
-        p[10] = width;
-        p[11] = if length > 0 { 11 } else { 10 };
-        p[17] = length;
-        p[25] = color;
-        p
-    }
-    #[test]
-    fn known_rolls_and_mismatch() {
-        for (width, length, color, size) in [
-            (29, 90, 1, "29x90"),
-            (62, 0, 1, "62"),
-            (62, 0, 0x81, "62red"),
-        ] {
-            let raw = decode_status(&packet(width, length, color)).unwrap();
-            let s = status_from_raw(&raw, "QL-800", Some(size)).unwrap();
-            assert_eq!(s["state"], "ready");
-            assert!(
-                s["matchingSizes"]
-                    .as_array()
-                    .unwrap()
-                    .contains(&json!(size))
-            );
-        }
-        let raw = decode_status(&packet(62, 0, 1)).unwrap();
-        assert_eq!(
-            status_from_raw(&raw, "QL-800", Some("62red")).unwrap()["state"],
-            "error"
-        );
-    }
-    #[test]
-    fn readiness_requires_fresh_reply() {
-        let mut p = packet(62, 0, 1);
-        p[18] = 1;
-        assert_eq!(
-            status_from_raw(&decode_status(&p).unwrap(), "QL-800", None).unwrap()["state"],
-            "unknown"
-        );
-        p[18] = 0;
-        p[19] = 1;
-        assert_eq!(
-            status_from_raw(&decode_status(&p).unwrap(), "QL-800", None).unwrap()["state"],
-            "busy"
-        );
-    }
-    #[test]
-    fn fragmented_status_resynchronizes() {
-        use std::os::unix::net::UnixStream;
-        let (mut writer, reader) = UnixStream::pair().unwrap();
-        reader.set_nonblocking(true).unwrap();
-        let mut file = File::from(std::os::fd::OwnedFd::from(reader));
-        let expected = packet(29, 90, 1);
-        let send = expected.clone();
-        let worker = std::thread::spawn(move || {
-            writer.write_all(b"noise\x80").unwrap();
-            writer.write_all(&send[..7]).unwrap();
-            std::thread::sleep(Duration::from_millis(15));
-            writer.write_all(&send[7..]).unwrap();
-        });
-        let got = read_packet(
-            &mut file,
-            &mut vec![],
-            Instant::now() + Duration::from_secs(1),
-        )
-        .unwrap();
-        assert_eq!(got, expected);
-        worker.join().unwrap();
-    }
-    #[test]
-    fn read_timeout_is_bounded() {
-        use std::os::unix::net::UnixStream;
-        let (_writer, reader) = UnixStream::pair().unwrap();
-        reader.set_nonblocking(true).unwrap();
-        let mut file = File::from(std::os::fd::OwnedFd::from(reader));
-        let start = Instant::now();
-        assert!(read_packet(&mut file, &mut vec![], start + Duration::from_millis(30)).is_err());
-        assert!(start.elapsed() < Duration::from_millis(250));
-    }
-    #[test]
-    fn tcp_sends_all_without_waiting_for_status() {
-        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
-        let addr = listener.local_addr().unwrap();
-        let worker = std::thread::spawn(move || {
-            let (mut stream, _) = listener.accept().unwrap();
-            let mut bytes = vec![];
-            stream.read_to_end(&mut bytes).unwrap();
-            bytes
-        });
-        let bytes = vec![42u8; 40000];
-        send_raster(&format!("tcp://{addr}"), &bytes, 1).unwrap();
-        assert_eq!(worker.join().unwrap(), bytes);
-    }
-    #[test]
-    fn exclusive_lock() {
-        let dir = tempfile::tempdir().unwrap();
-        let c = Config {
-            data_dir: dir.path().into(),
-            ..Config::default()
-        };
-        let first = acquire_lock(&c).unwrap();
-        assert!(acquire_lock(&c).is_err());
-        drop(first);
-        assert!(acquire_lock(&c).is_ok());
-    }
-}
 struct UsbDevice {
     handle: rusb::DeviceHandle<rusb::GlobalContext>,
     input: u8,
@@ -982,5 +843,145 @@ impl UsbDevice {
                 .handle
                 .read_bulk(self.input, &mut bytes, Duration::from_millis(10));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn raster_matches_python_driver() {
+        let cases: Value =
+            serde_json::from_str(include_str!("../tests/fixtures/cases.json")).unwrap();
+        for (i, c) in cases.as_array().unwrap().iter().enumerate() {
+            let base = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures");
+            let img = image::open(base.join(format!("{i}.png")))
+                .unwrap()
+                .into_rgb8();
+            let actual = rasterize(
+                c["model"].as_str().unwrap(),
+                c["size"].as_str().unwrap(),
+                &img,
+                false,
+                c["hi"].as_bool().unwrap(),
+                true,
+                c["dither"].as_bool().unwrap(),
+            )
+            .unwrap();
+            let expected = fs::read(base.join(format!("{i}.bin"))).unwrap();
+            assert_eq!(actual.len(), expected.len(), "case {i} length");
+            if let Some(pos) = actual.iter().zip(&expected).position(|(a, b)| a != b) {
+                panic!(
+                    "case {i} byte {pos}: actual {} expected {}",
+                    actual[pos], expected[pos]
+                );
+            }
+        }
+    }
+    fn packet(width: u8, length: u8, color: u8) -> Vec<u8> {
+        let mut p = vec![0; 32];
+        p[..6].copy_from_slice(&[0x80, 0x20, 0x42, 0x34, 0x38, 0x30]);
+        p[10] = width;
+        p[11] = if length > 0 { 11 } else { 10 };
+        p[17] = length;
+        p[25] = color;
+        p
+    }
+    #[test]
+    fn known_rolls_and_mismatch() {
+        for (width, length, color, size) in [
+            (29, 90, 1, "29x90"),
+            (62, 0, 1, "62"),
+            (62, 0, 0x81, "62red"),
+        ] {
+            let raw = decode_status(&packet(width, length, color)).unwrap();
+            let s = status_from_raw(&raw, "QL-800", Some(size)).unwrap();
+            assert_eq!(s["state"], "ready");
+            assert!(
+                s["matchingSizes"]
+                    .as_array()
+                    .unwrap()
+                    .contains(&json!(size))
+            );
+        }
+        let raw = decode_status(&packet(62, 0, 1)).unwrap();
+        assert_eq!(
+            status_from_raw(&raw, "QL-800", Some("62red")).unwrap()["state"],
+            "error"
+        );
+    }
+    #[test]
+    fn readiness_requires_fresh_reply() {
+        let mut p = packet(62, 0, 1);
+        p[18] = 1;
+        assert_eq!(
+            status_from_raw(&decode_status(&p).unwrap(), "QL-800", None).unwrap()["state"],
+            "unknown"
+        );
+        p[18] = 0;
+        p[19] = 1;
+        assert_eq!(
+            status_from_raw(&decode_status(&p).unwrap(), "QL-800", None).unwrap()["state"],
+            "busy"
+        );
+    }
+    #[test]
+    fn fragmented_status_resynchronizes() {
+        use std::os::unix::net::UnixStream;
+        let (mut writer, reader) = UnixStream::pair().unwrap();
+        reader.set_nonblocking(true).unwrap();
+        let mut file = File::from(std::os::fd::OwnedFd::from(reader));
+        let expected = packet(29, 90, 1);
+        let send = expected.clone();
+        let worker = std::thread::spawn(move || {
+            writer.write_all(b"noise\x80").unwrap();
+            writer.write_all(&send[..7]).unwrap();
+            std::thread::sleep(Duration::from_millis(15));
+            writer.write_all(&send[7..]).unwrap();
+        });
+        let got = read_packet(
+            &mut file,
+            &mut vec![],
+            Instant::now() + Duration::from_secs(1),
+        )
+        .unwrap();
+        assert_eq!(got, expected);
+        worker.join().unwrap();
+    }
+    #[test]
+    fn read_timeout_is_bounded() {
+        use std::os::unix::net::UnixStream;
+        let (_writer, reader) = UnixStream::pair().unwrap();
+        reader.set_nonblocking(true).unwrap();
+        let mut file = File::from(std::os::fd::OwnedFd::from(reader));
+        let start = Instant::now();
+        assert!(read_packet(&mut file, &mut vec![], start + Duration::from_millis(30)).is_err());
+        assert!(start.elapsed() < Duration::from_millis(250));
+    }
+    #[test]
+    fn tcp_sends_all_without_waiting_for_status() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        let worker = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut bytes = vec![];
+            stream.read_to_end(&mut bytes).unwrap();
+            bytes
+        });
+        let bytes = vec![42u8; 40000];
+        send_raster(&format!("tcp://{addr}"), &bytes, 1).unwrap();
+        assert_eq!(worker.join().unwrap(), bytes);
+    }
+    #[test]
+    fn exclusive_lock() {
+        let dir = tempfile::tempdir().unwrap();
+        let c = Config {
+            data_dir: dir.path().into(),
+            ..Config::default()
+        };
+        let first = acquire_lock(&c).unwrap();
+        assert!(acquire_lock(&c).is_err());
+        drop(first);
+        assert!(acquire_lock(&c).is_ok());
     }
 }

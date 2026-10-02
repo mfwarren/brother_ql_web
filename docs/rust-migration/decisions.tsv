@@ -1,2 +1,5 @@
 ts	phase	decision	why	evidence	result
 2026-10-02T00:00:00Z	frame	Preserve the HTTP and saved-data contracts in a Rust backend	Keep the React frontend and user labels compatible	docs/architecture.md	open
+2026-10-02T14:05:00Z	implementation	Use FreeType for native Rust text rendering	Preserve the existing glyph metrics and legacy label layout	server/src/rendering.rs	42 text references matched by renderer worker; integration pending
+2026-10-02T14:05:01Z	implementation	Keep Brother raster fixtures from the previous driver	Verify wire compatibility without printing physical labels	server/tests/fixtures/cases.json	9 raster fixtures matched
+2026-10-02T14:05:02Z	deployment	Build a separate ARM binary before changing the service	Keep the working Python service available throughout migration	/home/matt/label-rust-build	build in progress

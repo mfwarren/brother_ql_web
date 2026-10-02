@@ -288,10 +288,10 @@ def capture(client, directory):
     print(f'Captured {len(manifest["cases"])} reference drafts and PNGs in {directory}')
 
 
-def compare(client, directory):
+def compare(client, directory, allow_qr_mask=False):
     manifest = json.loads((directory / 'manifest.json').read_text())
     differences = []
-    exact = pixels_equal = 0
+    exact = pixels_equal = qr_equivalent = 0
     for case in manifest['cases']:
         image = client.preview(case['draft'])
         reference = (directory / case['png']).read_bytes()
@@ -313,11 +313,19 @@ def compare(client, directory):
                 mismatch['changedPixels'] = sum(pixels[i:i + 3] != b'\x00\x00\x00' for i in range(0, len(pixels), 3))
         except ImportError:
             mismatch['pixelComparison'] = 'Install Pillow to compare independently of PNG encoding'
+        if allow_qr_mask and case['draft']['content']['kind'] == 'qr' and png_size(reference) == png_size(image):
+            import zxingcpp
+            from PIL import Image
+            decoded = [code.text for code in zxingcpp.read_barcodes(Image.open(io.BytesIO(image)))]
+            if case['draft']['content']['code'].strip() in decoded:
+                qr_equivalent += 1
+                continue
         (directory / ('actual-' + case['png'])).write_bytes(image)
         differences.append(mismatch)
-    report = {'total': len(manifest['cases']), 'identicalPng': exact, 'identicalPixels': pixels_equal, 'differences': differences}
+    report = {'total': len(manifest['cases']), 'identicalPng': exact, 'identicalPixels': pixels_equal, 'equivalentQrMasks': qr_equivalent, 'differences': differences}
     (directory / 'comparison.json').write_text(json.dumps(report, indent=2) + '\n')
     print(f'Render comparison: {pixels_equal}/{len(manifest["cases"])} identical pixels, {exact} identical PNG files')
+    print(f'QR encoding differences verified by decoding: {qr_equivalent}')
     for difference in differences:
         print('DIFF ' + json.dumps(difference))
     assert not differences, f'Render differences saved to {directory / "comparison.json"}'
@@ -330,6 +338,7 @@ def main():
     parser.add_argument('--compare', type=Path)
     parser.add_argument('--render-only', action='store_true', help='Only capture/compare previews; do not run mutating API checks')
     parser.add_argument('--require-decode', action='store_true')
+    parser.add_argument('--allow-qr-mask', action='store_true', help='Accept a different QR mask only when dimensions and machine-decoded contents match')
     args = parser.parse_args()
     client = Client(args.url)
     if not args.render_only:
@@ -337,7 +346,7 @@ def main():
     if args.capture:
         capture(client, args.capture)
     if args.compare:
-        compare(client, args.compare)
+        compare(client, args.compare, args.allow_qr_mask)
     print(f'PASS {client.requests} HTTP requests against {args.url}')
 
 
