@@ -1,7 +1,7 @@
 # Bulk labels from CSV
 
 Design a text, QR, barcode, or image label in the editor, then expand **Bulk labels** below the content editor. The designer stays in place; the CSV and batch review panel appears below it.
-Keep using the same Text, QR, Barcode, and Image tabs, formatting toolbar, and paper settings. There is no separate template editor. Checking the batch selects the first valid row in the main preview. Choose **Preview N** on any review card to show that row there. Changing the design invalidates the reviewed batch; check it again before printing.
+Keep using the same Text, QR, Barcode, and Image tabs, formatting toolbar, and paper settings. There is no separate template editor. Checking the batch selects the first valid row in the main preview. Choose **Preview N** on any review card to show that row there. Collapsing **Bulk labels** keeps the selected row in the preview and restores the single-label Print button for that row. Reopen the accordion to print the selected batch. Changing the design invalidates the reviewed batch; check it again before printing.
 
 Write a CSV column name inside double braces, such as `{{Product}}`.
 Names are case-sensitive. Values are inserted literally; formulas and code are never executed.

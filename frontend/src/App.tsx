@@ -341,8 +341,11 @@ export default function App() {
     const canPrint =
         !!status && (status.state === "ready" || status.state === "simulation");
     const mismatchedPaper =
-        !simulated && !!draft && paperMismatch(draft, status);
+        !simulated && !!previewDraft && paperMismatch(previewDraft, status);
     const previewCurrent = preview.kind === "ready" && preview.key === draftKey;
+    const printPreviewCurrent =
+        preview.kind === "ready" &&
+        preview.key === JSON.stringify(previewDraft);
     const activeName = activeId
         ? name
         : draft
@@ -361,7 +364,6 @@ export default function App() {
                 !(event.metaKey || event.ctrlKey) ||
                 page !== "editor" ||
                 bulkEnabled ||
-                bulkPreview !== null ||
                 document.querySelector("dialog[open]")
             )
                 return;
@@ -372,16 +374,16 @@ export default function App() {
             if (event.key === "Enter") {
                 event.preventDefault();
                 if (
-                    draft &&
+                    previewDraft &&
                     canPrint &&
                     !mismatchedPaper &&
-                    previewCurrent &&
+                    printPreviewCurrent &&
                     !busy &&
                     Number.isInteger(copies) &&
                     copies >= 1 &&
                     copies <= 100
                 )
-                    void print(draft, copies);
+                    void print(previewDraft, copies);
             }
         };
         window.addEventListener("keydown", handleShortcut);
@@ -661,10 +663,7 @@ export default function App() {
                                         />
                                         <section
                                             className="print-panel panel"
-                                            hidden={
-                                                bulkEnabled ||
-                                                bulkPreview !== null
-                                            }
+                                            hidden={bulkEnabled}
                                         >
                                             {mismatchedPaper && (
                                                 <div
@@ -714,14 +713,18 @@ export default function App() {
                                                 disabled={
                                                     !canPrint ||
                                                     mismatchedPaper ||
-                                                    !previewCurrent ||
+                                                    !printPreviewCurrent ||
                                                     busy ||
                                                     copies < 1 ||
                                                     copies > 100 ||
                                                     !Number.isInteger(copies)
                                                 }
                                                 onClick={() =>
-                                                    void print(draft, copies)
+                                                    void print(
+                                                        bulkPreview?.draft ??
+                                                            draft,
+                                                        copies,
+                                                    )
                                                 }
                                             >
                                                 {busy ? (
@@ -737,6 +740,8 @@ export default function App() {
                                                     : `Print ${copies === 1 ? "label" : `${copies} labels`}`}
                                             </button>
                                             <p className="print-note">
+                                                {bulkPreview &&
+                                                    `Row ${bulkPreview.row} · `}
                                                 {simulated
                                                     ? "Simulator · no paper used"
                                                     : !canPrint
