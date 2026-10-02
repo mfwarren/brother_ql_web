@@ -9,8 +9,8 @@ The standalone script uses Python 3's standard library and `/dev/usb/lp0`. The p
 Stop any printing service that does not share the Studio lock before running it. In particular, the recovered legacy `brother_ql_web.service` does not honor that lock. Restore services afterward, including if the utility fails. Do not run this concurrently with CUPS, another driver, or another printer-settings utility.
 
 ```sh
-sudo python3 printer_settings.py get
-sudo python3 printer_settings.py set 0
+PRINTER_PRINTER=file:///dev/usb/lp0 label-studio-server power-get
+PRINTER_PRINTER=file:///dev/usb/lp0 label-studio-server power-set 0
 ```
 
 `0` disables automatic shutdown. Values 10, 20, 30, 40, 50, and 60 select minutes. Only 60 and 0 were observed on this QL-800; other values follow the QL-700 encoding and are not yet hardware-tested here. The script validates the QL-800 status header, idle/error state, setting acknowledgement, and range before any setting write. A value already set is not rewritten. Every write is followed by a read-back; failed verification is reported as uncertain, not success.

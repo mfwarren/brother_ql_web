@@ -1,6 +1,6 @@
 # Studio contract, implementation target
 
-All endpoints under /studio/api. Same-origin Flask serves built React files under /studio/. Classic /labeldesigner remains available for advanced upstream features. Backend retains upstream renderer and driver. No arbitrary client-selected printer path.
+All endpoints under /studio/api. The same-origin Rust server serves built React files under /studio/. /labeldesigner/ redirects to Studio. Native Rust handles rendering and Brother raster commands. No arbitrary client-selected printer path.
 
 GET /config -> {model:string, fonts:[{id:string,name:string}], sizes:[{id:string,name:string}], defaultFont:string, defaultSize:string, mode:'simulation'|'physical'}.
 GET /status -> {state:'simulation'|'ready'|'offline'|'busy'|'error'|'unknown', model:string, message:string, media:string|null}.
@@ -18,4 +18,4 @@ First modern UI has shared style across text lines. Classic editor keeps per-lin
 
 Saved labels use versioned JSON under `instance/studio-labels`. Saves are atomic. The classic editor and its repository API have been removed; existing classic label files are left untouched and are not automatically imported.
 
-Expected local development: instance config points to .local-fonts and simulation, 127.0.0.1:8014. Build output app/static/studio. Backend can be exercised via Flask client independent of frontend build. Meaningful tests should exercise actual renderer, persistence round-trip with images, bounds, failed physical device, explicit simulation and lock contention. No actual printing needed.
+Expected local development: instance config points to .local-fonts and simulation, 127.0.0.1:8014. Build output app/static/studio. Backend can be exercised over HTTP independent of the frontend build. Meaningful tests should exercise actual renderer, persistence round-trip with images, bounds, failed physical device, explicit simulation and lock contention. No actual printing needed.

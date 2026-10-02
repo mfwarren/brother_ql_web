@@ -1,0 +1,15 @@
+{
+  "printer": "file:///dev/usb/lp0",
+  "model": "QL-800",
+  "dataDir": "/var/lib/label-studio",
+  "labelsDir": "/var/lib/label-studio/labels",
+  "staticDir": "/opt/label-studio/current/app/static/studio",
+  "defaults": {
+    "font": "DejaVu Sans,Book",
+    "sizeId": "62",
+    "orientation": "standard",
+    "fontSize": 70,
+    "margin": 24,
+    "autoDetectRoll": true
+  }
+}

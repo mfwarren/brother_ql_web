@@ -8,7 +8,8 @@ User=matt
 Group=matt
 SupplementaryGroups=lp
 WorkingDirectory=/opt/label-studio/current
-ExecStart=/opt/label-studio/current/.venv/bin/python /opt/label-studio/current/serve.py
+ExecStart=/opt/label-studio/current/label-studio-server
+Environment=LABEL_STUDIO_CONFIG=/etc/label-studio/application.json
 Environment=SERVER_HOST=0.0.0.0
 Environment=SERVER_PORT=80
 AmbientCapabilities=CAP_NET_BIND_SERVICE
