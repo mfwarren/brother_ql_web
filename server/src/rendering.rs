@@ -833,6 +833,39 @@ pub fn decode_image(bytes: &[u8], mime: &str) -> Result<RgbImage> {
         command
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null());
+        #[cfg(unix)]
+        {
+            use std::os::unix::process::CommandExt;
+            // Poppler is a separate native process: bound its work and output as well as the decoded image.
+            unsafe {
+                command.pre_exec(|| {
+                    let cpu = libc::rlimit {
+                        rlim_cur: 20,
+                        rlim_max: 21,
+                    };
+                    let output = libc::rlimit {
+                        rlim_cur: 64 * 1024 * 1024,
+                        rlim_max: 64 * 1024 * 1024,
+                    };
+                    if libc::setrlimit(libc::RLIMIT_CPU, &cpu) != 0
+                        || libc::setrlimit(libc::RLIMIT_FSIZE, &output) != 0
+                    {
+                        return Err(std::io::Error::last_os_error());
+                    }
+                    #[cfg(target_os = "linux")]
+                    {
+                        let memory = libc::rlimit {
+                            rlim_cur: 512 * 1024 * 1024,
+                            rlim_max: 512 * 1024 * 1024,
+                        };
+                        if libc::setrlimit(libc::RLIMIT_AS, &memory) != 0 {
+                            return Err(std::io::Error::last_os_error());
+                        }
+                    }
+                    Ok(())
+                });
+            }
+        }
         let mut child = command
             .spawn()
             .context("PDF previews require Poppler (pdftoppm).")?;
