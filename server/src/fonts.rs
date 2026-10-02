@@ -51,11 +51,79 @@ struct ManifestFace {
     italic: bool,
 }
 
-fn name(face: &Face<'_>, id: u16) -> Option<String> {
-    face.names()
+fn decode_name(record: ttf_parser::name::Name<'_>) -> Option<String> {
+    use ttf_parser::PlatformId;
+    let encoding = match (record.platform_id, record.encoding_id) {
+        (PlatformId::Unicode, 0..=6) | (PlatformId::Windows, 0 | 1 | 10) | (PlatformId::Iso, 1) => {
+            encoding_rs::UTF_16BE
+        }
+        (PlatformId::Macintosh, 0) => encoding_rs::MACINTOSH,
+        (PlatformId::Macintosh, 1) | (PlatformId::Windows, 2) => encoding_rs::SHIFT_JIS,
+        (PlatformId::Macintosh, 2) | (PlatformId::Windows, 4) => encoding_rs::BIG5,
+        (PlatformId::Macintosh, 3) | (PlatformId::Windows, 5) => encoding_rs::EUC_KR,
+        (PlatformId::Macintosh, 7) => encoding_rs::X_MAC_CYRILLIC,
+        (PlatformId::Macintosh, 25) | (PlatformId::Windows, 3) => encoding_rs::GBK,
+        (PlatformId::Iso, 2) => {
+            return Some(record.name.iter().map(|byte| char::from(*byte)).collect());
+        }
+        _ => {
+            return record
+                .name
+                .is_ascii()
+                .then(|| String::from_utf8(record.name.to_vec()).unwrap());
+        }
+    };
+    let mut bytes = record.name.to_vec();
+    let printable = |byte: u8| matches!(byte, b'\t' | b'\n' | b'\r' | 0x20..=0x7e);
+    if encoding == encoding_rs::UTF_16BE && bytes.len() % 2 == 1 {
+        if bytes.last() == Some(&0) {
+            bytes.pop();
+        } else if bytes
+            .iter()
+            .enumerate()
+            .all(|(i, b)| if i % 2 == 1 { *b == 0 } else { printable(*b) })
+        {
+            bytes.insert(0, 0);
+        } else if bytes.first() == Some(&0) && bytes[1..].iter().all(|b| printable(*b)) {
+            bytes = bytes[1..].iter().flat_map(|b| [0, *b]).collect();
+        }
+    }
+    let decoded = encoding.decode_without_bom_handling_and_without_replacement(&bytes)?;
+    // Match fontTools' repair for Mac strings incorrectly carrying UTF-16 ASCII bytes.
+    if decoded.chars().enumerate().all(|(i, c)| {
+        if i % 2 == 0 {
+            c == '\0'
+        } else {
+            c.is_ascii() && printable(c as u8)
+        }
+    }) {
+        Some(decoded.chars().skip(1).step_by(2).collect())
+    } else {
+        Some(decoded.into_owned())
+    }
+}
+
+fn name(names: ttf_parser::name::Names<'_>, id: u16) -> Option<String> {
+    names
         .into_iter()
         .filter(|n| n.name_id == id)
-        .find_map(|n| n.to_string())
+        .find_map(decode_name)
+}
+
+fn debug_name(names: ttf_parser::name::Names<'_>, id: u16) -> Option<String> {
+    let mut fallback = None;
+    for record in names.into_iter().filter(|n| n.name_id == id) {
+        if let Some(decoded) = decode_name(record) {
+            if matches!(
+                (record.platform_id, record.language_id),
+                (ttf_parser::PlatformId::Macintosh, 0) | (ttf_parser::PlatformId::Windows, 0x409)
+            ) {
+                return Some(decoded);
+            }
+            fallback = Some(decoded);
+        }
+    }
+    fallback
 }
 fn valid_name(family: &str, style: &str) -> bool {
     !family.is_empty()
@@ -65,9 +133,15 @@ fn valid_name(family: &str, style: &str) -> bool {
 }
 fn basic_face(path: &Path) -> Result<(String, FontFace)> {
     let data = fs::read(path)?;
-    let face = Face::parse(&data, 0)?;
-    let family = name(&face, 1).context("Font has no family name")?;
-    let style = name(&face, 2).context("Font has no style name")?;
+    let raw = ttf_parser::RawFace::parse(&data, 0)?;
+    let names = ttf_parser::name::Table::parse(
+        raw.table(Tag::from_bytes(b"name"))
+            .context("Missing font names")?,
+    )
+    .context("Invalid font names")?
+    .names;
+    let family = name(names, 1).context("Font has no family name")?;
+    let style = name(names, 2).context("Font has no style name")?;
     ensure!(valid_name(&family, &style), "Invalid font names");
     let lower = style.to_lowercase();
     // Keep historical metadata for unmanaged fonts so rich-text face selection is stable.
@@ -305,11 +379,11 @@ fn inspect_faces(
         Face::parse(data, 0).context("Choose a valid TTF or OTF font with printable outlines.")?;
     let family = family_override
         .map(str::to_owned)
-        .or_else(|| name(&face, 16))
-        .or_else(|| name(&face, 1))
+        .or_else(|| debug_name(face.names(), 16))
+        .or_else(|| debug_name(face.names(), 1))
         .context("Missing font family")?;
-    let style = name(&face, 17)
-        .or_else(|| name(&face, 2))
+    let style = debug_name(face.names(), 17)
+        .or_else(|| debug_name(face.names(), 2))
         .context("Missing font style")?;
     ensure!(valid_name(&family, &style), "Invalid font names");
     let axes = face.variation_axes();
@@ -604,6 +678,59 @@ mod tests {
         let fonts =
             Fonts::load(config).expect("Install DejaVu fonts to run font integration tests");
         fs::read(&fonts.get(&fonts.default_font()).unwrap().path).unwrap()
+    }
+    fn naming_table(records: &[(u16, u16, u16, u16, &[u8])]) -> Vec<u8> {
+        let mut table = Vec::new();
+        for value in [0, records.len() as u16, (6 + records.len() * 12) as u16] {
+            table.extend(value.to_be_bytes());
+        }
+        let mut strings: Vec<u8> = Vec::new();
+        for &(platform, encoding, language, id, text) in records {
+            for value in [
+                platform,
+                encoding,
+                language,
+                id,
+                text.len() as u16,
+                strings.len() as u16,
+            ] {
+                table.extend(value.to_be_bytes());
+            }
+            strings.extend(text);
+        }
+        table.extend(strings);
+        table
+    }
+    #[test]
+    fn system_names_keep_mac_roman_before_localized_unicode_names() {
+        let data = naming_table(&[
+            (1, 0, 0, 1, b"Caf\x8e Font"),
+            (1, 0, 0, 2, b"Regular"),
+            (3, 1, 3, 2, b"\0N\0o\0r\0m\0a\0l"),
+        ]);
+        let names = ttf_parser::name::Table::parse(&data).unwrap().names;
+        assert_eq!(name(names, 1).unwrap(), "Café Font");
+        assert_eq!(name(names, 2).unwrap(), "Regular");
+    }
+    #[test]
+    fn managed_names_prefer_english_and_unicode_full_repertoire_is_supported() {
+        let data = naming_table(&[
+            (0, 3, 0, 2, b"\0N\0o\0r\0m\0a\0l"),
+            (3, 10, 0x409, 2, b"\0R\0e\0g\0u\0l\0a\0r"),
+        ]);
+        let names = ttf_parser::name::Table::parse(&data).unwrap().names;
+        assert_eq!(name(names, 2).unwrap(), "Normal");
+        assert_eq!(debug_name(names, 2).unwrap(), "Regular");
+    }
+    #[test]
+    fn repairs_old_mislabeled_utf16_ascii_names() {
+        let data = naming_table(&[
+            (1, 0, 0, 1, b"\0C\0a\0f\0e"),
+            (3, 1, 0x409, 2, b"R\0e\0g\0u\0l\0a\0r"),
+        ]);
+        let names = ttf_parser::name::Table::parse(&data).unwrap().names;
+        assert_eq!(name(names, 1).unwrap(), "Cafe");
+        assert_eq!(name(names, 2).unwrap(), "Regular");
     }
     #[test]
     fn uploaded_original_survives_restart_and_repeat_install() {
