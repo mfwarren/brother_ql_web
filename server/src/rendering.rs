@@ -912,6 +912,32 @@ pub fn decode_image(bytes: &[u8], mime: &str) -> Result<RgbImage> {
 }
 
 pub fn decode_image_with_dpi(bytes: &[u8], mime: &str, dpi: u32) -> Result<RgbImage> {
+    decode_image_options(bytes, mime, dpi, None)
+}
+
+/// Rasterize vector PDFs at the destination label scale without allocating a full page at 600 dpi.
+pub fn decode_image_for_label(
+    bytes: &[u8],
+    mime: &str,
+    dpi: u32,
+    max_dimension: u32,
+) -> Result<RgbImage> {
+    if mime != "application/pdf" {
+        return decode_image(bytes, mime);
+    }
+    ensure!(
+        max_dimension > 0 && u64::from(max_dimension).pow(2) <= MAX_PIXELS,
+        "PDF label dimensions exceed the render limit."
+    );
+    decode_image_options(bytes, mime, dpi, Some(max_dimension))
+}
+
+fn decode_image_options(
+    bytes: &[u8],
+    mime: &str,
+    dpi: u32,
+    max_dimension: Option<u32>,
+) -> Result<RgbImage> {
     let bytes = if mime == "application/pdf" {
         ensure!(
             matches!(dpi, 300 | 600),
@@ -925,9 +951,11 @@ pub fn decode_image_with_dpi(bytes: &[u8], mime: &str, dpi: u32) -> Result<RgbIm
         command
             .args(["-f", "1", "-l", "1", "-r"])
             .arg(dpi.to_string())
-            .args(["-singlefile", "-png"])
-            .arg(&input)
-            .arg(&output);
+            .args(["-singlefile", "-png"]);
+        if let Some(max_dimension) = max_dimension {
+            command.arg("-scale-to").arg(max_dimension.to_string());
+        }
+        command.arg(&input).arg(&output);
         command
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null());
@@ -1044,13 +1072,17 @@ mod tests {
             assert_eq!(ink, expected_ink, "weight {weight}");
         }
     }
-    fn vector_pdf() -> Vec<u8> {
-        let content = "0 g 36 5 0.12 26 re f 36.24 5 0.12 26 re f\n";
+    fn vector_pdf(width: u32, height: u32, content: &str) -> Vec<u8> {
         let objects = [
             "<< /Type /Catalog /Pages 2 0 R >>".to_owned(),
             "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_owned(),
-            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 72 36] /Resources << >> /Contents 4 0 R >>".to_owned(),
-            format!("<< /Length {} >>\nstream\n{content}endstream", content.len()),
+            format!(
+                "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {width} {height}] /Resources << >> /Contents 4 0 R >>"
+            ),
+            format!(
+                "<< /Length {} >>\nstream\n{content}endstream",
+                content.len()
+            ),
         ];
         let mut pdf = b"%PDF-1.4\n".to_vec();
         let mut offsets = Vec::new();
@@ -1071,7 +1103,7 @@ mod tests {
 
     #[test]
     fn pdf_high_resolution_preserves_native_vector_detail() {
-        let pdf = vector_pdf();
+        let pdf = vector_pdf(72, 36, "0 g 36 5 0.12 26 re f 36.24 5 0.12 26 re f\n");
         let normal = decode_image(&pdf, "application/pdf").unwrap();
         let high = decode_image_with_dpi(&pdf, "application/pdf", 600).unwrap();
         assert_eq!(normal.dimensions(), (300, 150));
@@ -1087,5 +1119,23 @@ mod tests {
             high,
             imageops::resize(&normal, 600, 300, imageops::FilterType::Nearest)
         );
+    }
+    #[test]
+    fn letter_pdf_is_bounded_to_label_resolution_without_losing_vector_detail() {
+        let pdf = vector_pdf(612, 792, "0 g 396 20 0.4 752 re f 396.8 20 0.4 752 re f\n");
+        assert!(
+            decode_image_with_dpi(&pdf, "application/pdf", 600).is_err(),
+            "A full Letter page at 600 dpi exceeds the 16 MP limit"
+        );
+        let continuous = decode_image_for_label(&pdf, "application/pdf", 600, 1392).unwrap();
+        let fixed = decode_image_for_label(&pdf, "application/pdf", 600, 1982).unwrap();
+        assert_eq!(continuous.dimensions(), (1076, 1392));
+        assert_eq!(fixed.dimensions(), (1532, 1982));
+        assert!(fixed.get_pixel(991, 991)[0] < 128 && fixed.get_pixel(993, 991)[0] < 128);
+        assert!(
+            fixed.get_pixel(992, 991)[0] > 200,
+            "Direct vector rasterization must retain the white gap between fine strokes"
+        );
+        assert!(decode_image_for_label(&pdf, "application/pdf", 600, 4001).is_err());
     }
 }
