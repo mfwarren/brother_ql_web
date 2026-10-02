@@ -22,7 +22,7 @@ fn query(file: &mut File, command: &[u8], kind: u8) -> Result<(u8, String)> {
         bail!("Unrecognized auto power-off value or acknowledgement");
     }
     Ok((
-        packet[30] * 10,
+        if kind == 0xf0 { packet[30] * 10 } else { 0 },
         packet.iter().map(|b| format!("{b:02x}")).collect(),
     ))
 }

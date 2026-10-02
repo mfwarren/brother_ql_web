@@ -686,6 +686,7 @@ pub fn print_images(
     size: &str,
     rotated: bool,
     high_res: bool,
+    dither: bool,
 ) -> Result<()> {
     let _lock = acquire_lock(config)?;
     if !device(config).starts_with("tcp://") {
@@ -696,7 +697,7 @@ pub fn print_images(
         .map(|im| {
             Ok((
                 im.clone(),
-                rasterize(&config.model, size, im, rotated, high_res, true, false)?,
+                rasterize(&config.model, size, im, rotated, high_res, true, dither)?,
             ))
         })
         .collect::<Result<Vec<_>>>()?;
