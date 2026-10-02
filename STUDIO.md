@@ -93,7 +93,7 @@ Hardware density adjustment is not implemented. See [QL-800 notes](docs/ql800.md
 
 ```sh
 .venv/bin/python -m pip install -r requirements-dev.txt
-.venv/bin/python -m pytest tests/test_studio.py tests/test_studio_qr.py tests/test_printer_settings.py tests/test_studio_samples.py tests/test_studio_preferences.py tests/test_usb_transport.py tests/test_rich_text.py -q
+.venv/bin/python -m pytest tests/test_studio.py tests/test_studio_qr.py tests/test_studio_barcodes.py tests/test_bulk_labels.py tests/test_remote_images.py tests/test_printer_settings.py tests/test_studio_samples.py tests/test_studio_preferences.py tests/test_usb_transport.py tests/test_rich_text.py tests/test_webhook.py -q
 node --experimental-strip-types frontend/title-checks.mjs
 node --experimental-strip-types frontend/rich-text-checks.mjs
 npm run build --prefix frontend

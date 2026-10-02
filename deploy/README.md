@@ -10,7 +10,7 @@ A suggested layout separates program files from persistent data:
 - `/opt/label-studio/current`: symlink to the active release.
 - `/etc/label-studio/application.py`: host configuration.
 - `/var/lib/label-studio/labels`: modern label library.
-- `/var/lib/label-studio/classic-labels`: classic library.
+- Older installations may have `/var/lib/label-studio/classic-labels`. Keep it as an archive; Studio does not use or modify it.
 - `/var/lib/label-studio/fonts` and `settings.json`: installed fonts and defaults.
 - `/var/lib/label-studio/printer.lock`: shared printer lock.
 

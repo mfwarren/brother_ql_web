@@ -210,9 +210,9 @@ def _render(draft, image_bytes):
         if 'paragraphs' not in draft['content']:
             draft = {**draft, 'content': {**draft['content'], 'paragraphs': [{'runs': [{'text': line}]} for line in draft['content']['text'].split('\n')]}}
         return render_label(draft)
-    from app.labeldesigner.routes import create_label_from_request
+    from app.labeldesigner.rendering import build_label
     values, files = _to_upstream(draft, image_bytes)
-    label = create_label_from_request(values, files)
+    label = build_label(values, files)
     label.expand_templates = False
     return label
 

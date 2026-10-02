@@ -15,7 +15,7 @@ WORKDIR /app
 # This ensures the dependencies can be sourced from docker's cache (and save a
 # lot of time during building) *unless* the requirements.txt file actually
 # changes
-COPY ./requirements.txt /app/requirements.txt
+COPY ./requirements.txt ./requirements-server.txt /app/
 
 RUN if [ $TARGETARCH == "arm" ]; then \
     apk update --no-cache && \
@@ -52,7 +52,7 @@ RUN apk update --no-cache && \
     font-noto \
     poppler-utils \
     bash && \
-    pip3 install -r requirements.txt
+    pip3 install -r requirements-server.txt
 
 RUN if [ $TARGETARCH == "arm" ]; then \
         # Clean up build dependencies to reduce image size
@@ -63,4 +63,4 @@ COPY . /app
 COPY --from=frontend-build /build/app/static/studio /app/app/static/studio
 
 EXPOSE 8013
-ENTRYPOINT ["python3", "run.py"]
+ENTRYPOINT ["python3", "serve.py"]

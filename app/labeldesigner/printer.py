@@ -1,14 +1,11 @@
 import logging
 import os
-import time
 import datetime
 from brother_ql.backends.helpers import send
 from brother_ql import BrotherQLRaster, create_label
 from brother_ql.backends.helpers import get_status
 from brother_ql.backends import backend_factory, guess_backend
-from flask import Config
 from .label import LabelOrientation, LabelType, LabelContent
-from brother_ql.models import ALL_MODELS
 
 SIMULATED_LABELS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'simulated_labels')
 
@@ -30,13 +27,6 @@ def query_printer_status(device_specifier, timeout=3.0):
 
     from .usb_transport import query_status
     return query_status(device_specifier, timeout)
-
-# Experimentally identified MAC address prefixes for Brother network printers
-# (may not be exhaustive)
-BROTHER_MAC_ADDRESS_PREFIXES = [
-    "ac:f2:3c",  # Brother QL-810W
-]
-
 
 class PrinterQueue:
     def __init__(self, model, device_specifier, label_size):
@@ -174,150 +164,3 @@ def get_printer(printer_identifier=None, backend_identifier=None):
     BrotherQLBackend = be["backend_class"]
     printer = BrotherQLBackend(printer_identifier)
     return printer
-
-
-_last_scan_ts = 0
-_cached_printers = []
-
-
-def get_ptr_status(config: Config):
-    # Simple in-memory cache for detected printers
-    global _last_scan_ts, _cached_printers
-
-    device_specifier = config['PRINTER_PRINTER']
-    default_model = config['PRINTER_MODEL']
-
-    SIMULATOR_PRINTER = {
-        'errors': [],
-        'path': 'simulation',
-        'media_category': None,
-        'media_length': 0,
-        'media_type': None,
-        'media_width': None,
-        'model': default_model,
-        'model_code': None,
-        'phase_type': 'Simulator',
-        'series_code': None,
-        'setting': None,
-        'status_code': 0,
-        'status_type': 'Simulator',
-        'tape_color': '',
-        'text_color': '',
-        'red_support': default_model in [m.identifier for m in ALL_MODELS if m.two_color]
-    }
-
-    status = {
-        "errors": [],
-        "path": device_specifier,
-        "media_category": None,
-        "media_length": 0,
-        "media_type": None,
-        "media_width": None,
-        "model": "Unknown",
-        "model_code": None,
-        "phase_type": "Unknown",
-        "series_code": None,
-        "setting": None,
-        "status_code": 0,
-        "status_type": "Unknown",
-        "tape_color": "",
-        "text_color": "",
-        "red_support": False
-    }
-    if device_specifier == 'simulation':
-        return {'printers': [SIMULATOR_PRINTER], 'selected': 'simulation', **SIMULATOR_PRINTER}
-    try:
-        # If device_specifier is the default '?', try to auto-detect multiple printers
-        if device_specifier == '?':
-            now = time.time()
-            # Refresh cache every 10 seconds
-            if now - _last_scan_ts > 10:
-                logger.debug('Auto-detecting printers: scanning local USB and network')
-                found_list = []
-                for i in range(0, 11):
-                    dev = f"/dev/usb/lp{i}"
-                    if not os.path.exists(dev):
-                        continue
-                    spec = f"file://{dev}"
-                    try:
-                        printer_state = query_printer_status(spec)
-                        printer_state.setdefault('path', spec)
-                        found_list.append(printer_state)
-                        logger.debug('Found compatible printer at %s -> %s', spec, printer_state.get('model'))
-                    except Exception:
-                        logger.debug('Device %s exists but is not a compatible printer or failed to query', dev, exc_info=True)
-
-                # scan ARP table for network printers with known Brother MAC
-                # address prefixes
-                try:
-                    with open('/proc/net/arp', 'r') as arp_file:
-                        for line in arp_file.readlines()[1:]:  # skip header line
-                            parts = line.split()
-                            if len(parts) < 4:
-                                continue
-                            ip, _, _, mac, _, _ = parts
-                            if any(mac.startswith(prefix) for prefix in BROTHER_MAC_ADDRESS_PREFIXES):
-                                device_specifier = f"tcp://{ip}"
-                                printer = SIMULATOR_PRINTER.copy()
-                                printer['path'] = device_specifier
-                                printer['phase_type'] = 'Network Printer'
-                                printer['status_type'] = 'Network Printer'
-                                found_list.append(printer)
-                                logger.debug('Found network printer candidate at %s -> %s', device_specifier, printer.get('model'))
-                except Exception:
-                    logger.debug('Failed to read ARP table for network printer detection', exc_info=True)
-
-                _cached_printers = found_list
-                _last_scan_ts = now
-            # Prepare response: include list of printers and a top-level status for the first one (compatibility)
-            # Ensure simulator printer is always present
-            sim = SIMULATOR_PRINTER.copy()
-            printers = list(_cached_printers)
-            # append simulator if not present
-            if not any(p.get('path') == 'simulator' for p in printers):
-                printers.append(sim)
-            if printers:
-                # Use first detected printer as default top-level status for backward compatibility
-                first = printers[0]
-                for key, value in first.items():
-                    status[key] = value
-                return {
-                    'printers': printers,
-                    'selected': status.get('path'),
-                    **status
-                }
-            else:
-                status['status_type'] = 'Offline'
-                status['errors'].append('No compatible printer detected')
-                return {
-                    'printers': [sim],
-                    'selected': None,
-                    **status
-                }
-        elif device_specifier.startswith('tcp://'):
-            # TCP printers are not supported for status queries
-            status['status_type'] = 'Unknown'
-            printer = SIMULATOR_PRINTER.copy()
-            printer['path'] = device_specifier
-            printer['phase_type'] = 'Network Printer'
-            printer['status_type'] = 'Network Printer'
-            sim = SIMULATOR_PRINTER.copy()
-            status['printers'] = [printer, sim]
-            status['selected'] = device_specifier
-            return status
-        else:
-            printer_state = query_printer_status(device_specifier)
-            for key, value in printer_state.items():
-                status[key] = value
-        # Always include simulator in returned printers list
-        sim = SIMULATOR_PRINTER.copy()
-        status['red_support'] = status['model'] in [model.identifier for model in ALL_MODELS if model.two_color]
-        return {
-            'printers': [sim],
-            'selected': status.get('path'),
-            **status
-        }
-    except Exception as e:
-        logger.exception("Printer status error: %s", e)
-        status['errors'] = [str(e)]
-        return status

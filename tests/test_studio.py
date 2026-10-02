@@ -166,19 +166,6 @@ def test_request_limit_rejects_large_json(client):
     assert response.json['message'] == 'Request is too large.'
 
 
-def test_classic_status_does_not_query_usb_while_print_lock_held(client, monkeypatch):
-    client.application.config['PRINTER_PRINTER'] = '?'
-    import app.labeldesigner.routes as routes
-    monkeypatch.setattr(routes, 'get_ptr_status', lambda config: pytest.fail('USB queried during print'))
-    lock_path = client.application.config['STUDIO_PRINTER_LOCK']
-    with open(lock_path, 'a+b') as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        response = client.get('/labeldesigner/api/printer_status')
-        assert response.status_code == 200
-        assert response.json['status_type'] == 'Busy'
-        fcntl.flock(lock, fcntl.LOCK_UN)
-
-
 def test_pdf_converter_uses_only_first_page(monkeypatch):
     import app.utils as utils
     requested = {}
