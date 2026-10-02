@@ -1,0 +1,198 @@
+[
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 31,
+    "sizeId": "62",
+    "orientation": "standard",
+    "align": "center",
+    "color": "black",
+    "margin": 17,
+    "highRes": false,
+    "content": {
+      "kind": "text",
+      "text": "AV Coffee\nbeans & gyp"
+    }
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 31,
+    "sizeId": "62",
+    "orientation": "standard",
+    "align": "center",
+    "color": "black",
+    "margin": 17,
+    "highRes": false,
+    "content": {
+      "kind": "text",
+      "text": "AV Coffee\nbeans & gyp",
+      "paragraphs": [
+        {
+          "runs": [
+            {
+              "text": "AV Coffee",
+              "size": 33,
+              "underline": true
+            }
+          ]
+        },
+        {
+          "runs": [
+            {
+              "text": "beans & gyp",
+              "size": 24
+            }
+          ]
+        }
+      ]
+    },
+    "verticalAlign": "bottom",
+    "lineSpacing": 125
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 31,
+    "sizeId": "29x90",
+    "orientation": "standard",
+    "align": "center",
+    "color": "black",
+    "margin": 17,
+    "highRes": false,
+    "content": {
+      "kind": "text",
+      "text": "AV Coffee\nbeans & gyp"
+    }
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 31,
+    "sizeId": "29x90",
+    "orientation": "standard",
+    "align": "center",
+    "color": "black",
+    "margin": 17,
+    "highRes": false,
+    "content": {
+      "kind": "text",
+      "text": "AV Coffee\nbeans & gyp",
+      "paragraphs": [
+        {
+          "runs": [
+            {
+              "text": "AV Coffee",
+              "size": 33,
+              "underline": true
+            }
+          ]
+        },
+        {
+          "runs": [
+            {
+              "text": "beans & gyp",
+              "size": 24
+            }
+          ]
+        }
+      ]
+    },
+    "verticalAlign": "bottom",
+    "lineSpacing": 125
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 31,
+    "sizeId": "62",
+    "orientation": "rotated",
+    "align": "center",
+    "color": "black",
+    "margin": 17,
+    "highRes": false,
+    "content": {
+      "kind": "text",
+      "text": "AV Coffee\nbeans & gyp"
+    }
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 31,
+    "sizeId": "62",
+    "orientation": "rotated",
+    "align": "center",
+    "color": "black",
+    "margin": 17,
+    "highRes": false,
+    "content": {
+      "kind": "text",
+      "text": "AV Coffee\nbeans & gyp",
+      "paragraphs": [
+        {
+          "runs": [
+            {
+              "text": "AV Coffee",
+              "size": 33,
+              "underline": true
+            }
+          ]
+        },
+        {
+          "runs": [
+            {
+              "text": "beans & gyp",
+              "size": 24
+            }
+          ]
+        }
+      ]
+    },
+    "verticalAlign": "bottom",
+    "lineSpacing": 125
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 31,
+    "sizeId": "29x90",
+    "orientation": "rotated",
+    "align": "center",
+    "color": "black",
+    "margin": 17,
+    "highRes": false,
+    "content": {
+      "kind": "text",
+      "text": "AV Coffee\nbeans & gyp"
+    }
+  },
+  {
+    "font": "DejaVu Sans Mono,Book",
+    "fontSize": 31,
+    "sizeId": "29x90",
+    "orientation": "rotated",
+    "align": "center",
+    "color": "black",
+    "margin": 17,
+    "highRes": false,
+    "content": {
+      "kind": "text",
+      "text": "AV Coffee\nbeans & gyp",
+      "paragraphs": [
+        {
+          "runs": [
+            {
+              "text": "AV Coffee",
+              "size": 33,
+              "underline": true
+            }
+          ]
+        },
+        {
+          "runs": [
+            {
+              "text": "beans & gyp",
+              "size": 24
+            }
+          ]
+        }
+      ]
+    },
+    "verticalAlign": "bottom",
+    "lineSpacing": 125
+  }
+]
