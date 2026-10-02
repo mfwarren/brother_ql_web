@@ -1,10 +1,10 @@
 # Rust backend migration
 
 - [x] Read workflow principles and inventory existing behavior.
-- [ ] Capture API/render reference fixtures before implementation.
-- [ ] Port rendering, font management, printer transport, and HTTP services across separate modules.
-- [ ] Verify each module with behavior tests, then compare end-to-end API output.
-- [ ] Update production packaging and deployment configuration.
+- [x] Capture API/render reference fixtures before implementation.
+- [x] Port rendering, font management, printer transport, and HTTP services across separate modules.
+- [x] Verify each module with behavior tests, then compare end-to-end API output.
+- [x] Update production packaging and deployment configuration.
 - [ ] Verify on Raspberry Pi before replacing the Python service.
 
 Done means the React application uses a Rust process for every server endpoint, existing saved labels/fonts/settings load, text/QR/barcode/image and bulk workflows pass compatibility checks, and printer status/raster output pass checks without an unsolicited physical print. Preserve the legacy text layout. Python remains a reference until those checks pass.

@@ -1,0 +1,65 @@
+
+running 39 tests
+test fonts::tests::google_variable_font_keeps_regular_weight_and_license ... ignored, Downloads the pinned Google Fonts source; run explicitly for integration verification
+test csv_input::tests::leading_empty_header_is_not_silently_skipped ... ok
+test bulk::tests::duplicate_headers_fail ... ok
+test csv_input::tests::quoted_newlines_preserve_values_and_end_line_numbers ... ok
+test bulk::tests::csv_preserves_values_and_reports_rows ... ok
+test csv_input::tests::bom_quoted_headers_still_require_strict_quotes ... ok
+test csv_input::tests::quotes_inside_unquoted_fields_are_literal ... ok
+test csv_input::tests::data_row_limits_and_duplicate_headers_are_checked ... ok
+test csv_input::tests::empty_rows_and_escaped_quotes_match_csv_reader ... ok
+test power::tests::invalid_minutes_never_open_a_device ... ok
+test fonts::tests::system_names_keep_mac_roman_before_localized_unicode_names ... ok
+test fonts::tests::managed_names_prefer_english_and_unicode_full_repertoire_is_supported ... ok
+test fonts::tests::repairs_old_mislabeled_utf16_ascii_names ... ok
+test fonts::tests::invalid_managed_manifest_cannot_escape_its_font_directory ... ok
+test bulk::tests::literal_and_split_style ... ok
+test printer::tests::exclusive_lock ... ok
+test power::tests::settings_accept_only_known_ql800_idle_acknowledgements ... ok
+test printer::tests::known_rolls_and_mismatch ... ok
+test printer::tests::fragmented_status_resynchronizes ... ok
+test fonts::tests::catalog_installation_marker_is_persistent ... ok
+test printer::tests::readiness_requires_fresh_reply ... ok
+test printer::tests::tcp_sends_all_without_waiting_for_status ... ok
+test remote_images::tests::blocks_private_special_mapped ... ok
+test fonts::tests::invalid_uploads_and_catalog_ids_do_not_write_files ... ok
+test printer::tests::read_timeout_is_bounded ... ok
+test rendering::tests::variable_font_axes_match_pillow_weight_rasters ... ok
+test fonts::tests::damaged_font_offsets_and_truncations_return_errors_without_panicking ... ok
+test webhook::tests::webhook_color_mapping_matches_existing_palette ... ok
+test fonts::tests::managed_axes_and_legacy_alias_are_preserved ... ok
+test printer::risk_tests::simulation_cut_end_cuts_only_final_page ... ok
+test webhook::tests::oversized_fixed_batch_is_rejected_before_image_decode ... ok
+test printer::tests::raster_matches_python_driver ... ok
+test fonts::tests::uploaded_original_survives_restart_and_repeat_install ... ok
+test rendering::tests::pdf_high_resolution_preserves_native_vector_detail ... ok
+test printer::risk_tests::failed_sent_batch_is_recorded_and_retry_cannot_send_again ... ok
+test printer::risk_tests::unknown_red_requires_confirmation_and_never_allows_bulk_override ... ok
+test rendering::tests::letter_pdf_is_bounded_to_label_resolution_without_losing_vector_detail ... ok
+test printer::risk_tests::one_hundred_high_resolution_copies_reuse_a_single_rendered_page ... ok
+test printer::risk_tests::oversized_batch_sends_nothing_and_does_not_consume_job_id ... ok
+
+test result: ok. 38 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 45.10s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test formatted_text_reports_overflow_instead_of_clipping ... ok
+test whitespace_only_text_and_empty_paragraph_render_safely ... ok
+test barcode_width_safeguard_and_four_supported_symbologies ... ok
+test vertical_alignment_moves_ink_without_resizing_fixed_paper ... ok
+test high_resolution_and_preview_rotation_preserve_paper_geometry ... ok
+test legacy_and_formatted_documents_preserve_python_reference_pixels ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.10s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

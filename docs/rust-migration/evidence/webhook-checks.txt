@@ -1,0 +1,2 @@
+PASS webhook authentication, JSON images, rotation, multipart upload, and high-resolution Letter PDFs on continuous/fixed labels; simulation only
+PASS legacy webhook HTTP 400 response for printer-lock contention
