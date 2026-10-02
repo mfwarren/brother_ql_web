@@ -1,0 +1,2 @@
+ts	phase	decision	why	evidence	result
+2026-10-02T00:00:00Z	frame	Preserve the HTTP and saved-data contracts in a Rust backend	Keep the React frontend and user labels compatible	docs/architecture.md	open
